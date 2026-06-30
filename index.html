@@ -883,7 +883,7 @@ reminderContinue.addEventListener('click',()=>{hideReminder();resetReminderTimer
 reminderOverlay.addEventListener('click',e=>{if(e.target===reminderOverlay)hideReminder();});
 introConfirm.addEventListener('click',advanceIntro);recapContinue.addEventListener('click',hideRecap);
 
-function init(){chapterLabel.textContent=CHAPTER_TITLES[0];showMoyuThenContinue();}
+function init(){chapterLabel.textContent=CHAPTER_TITLES[0];introOverlay.classList.add('hidden');showMoyuThenContinue();}
 init();
 })();
 </script>
