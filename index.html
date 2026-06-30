@@ -216,7 +216,7 @@ const CHAPTER_SUMMARIES=[
 
 const MOYU_QUOTES=['月薪三千，玩什么命。资本家给你画饼，你给资本家摸鱼，这叫礼尚往来。','公司只买了你每天八小时，没买你的命。剩下的时间，是赠品。','加班是能力不足的表现，摸鱼是薪资倒挂的反击。','合理的摸鱼，是对这份工资最基本的尊重。'];
 
-const INTRO_SCREENS=[{icon:'⚠️',title:'友情提示（虽然我们之间没什么友情）',body:'<p>本游戏<span class="highlight">没有读档功能</span>。</p><p>选错了就是选错了。坑踩了就是踩了。人被开除了就是开除了。</p><p>别指望我们会惯着你。</p>',btn:'知道了，继续。'},{icon:'🚫',title:'免责声明（甩锅声明）',body:'<p>自动存档仅用于防止浏览器崩溃。存档只有一个，选择一旦做出，覆盖式写入，不可逆。</p><p class="dim">想反复试选项？去玩消消乐。</p>',btn:'行，不指望你们。'},{icon:'💀',title:'最后一句人话',body:'<p>赵东升不会给你第二次机会。陈默的便利贴不会自己贴到你键盘上。<span class="highlight">你只能靠自己。</span></p><p>准备好对你的每一个选择负责了吗？</p>',btn:'知道了，别废话了，进公司。'}];
+const INTRO_SCREENS=[{icon:'⚠️',title:'友情提示（虽然我们之间没什么友情）',body:'<p>本游戏<span class="highlight">没有读档功能</span>。</p><p>选错了就是选错了。坑踩了就是踩了。人被开除了就是开除了。</p><p>别指望我们会惯着你。</p>',btn:'知道了，继续。'},{icon:'🚫',title:'免责声明（甩锅声明）',body:'<p>自动存档仅用于防止浏览器崩溃。存档只有一个，选择一旦做出，覆盖式写入，不可逆。</p><p class="dim">想反复试选项？去玩消消乐。</p>',btn:'行，不指望你们。'},{icon:'💀',title:'最后一句人话',body:'<p>这个游戏<span class="highlight">没有完美结局</span>。</p><p>选A可能保住了什么，选B可能失去了什么。没有对错，只有后果。</p><p>准备好对你的每一个选择负责了吗？</p>',btn:'知道了，进公司。'}];
 
 const $=id=>document.getElementById(id);
 const storyArea=$('story-area'),choicesArea=$('choices-area'),itemAlert=$('item-alert'),chapterLabel=$('chapter-label');
@@ -247,7 +247,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)resetRemind
 
 let introIdx=0;
 function showIntroScreen(idx){introIdx=idx;const s=INTRO_SCREENS[idx];introIcon.textContent=s.icon;introTitle.textContent=s.title;introBody.innerHTML=s.body;introConfirm.textContent=s.btn;introDots.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));introOverlay.classList.add('show');}
-function advanceIntro(){if(introIdx<INTRO_SCREENS.length-1){showIntroScreen(introIdx+1);}else{introOverlay.classList.add('hidden');try{localStorage.setItem(INTRO_KEY,'1');}catch(e){}showMoyuThenContinue();}}
+function advanceIntro(){if(introIdx<INTRO_SCREENS.length-1){showIntroScreen(introIdx+1);}else{introOverlay.classList.add('hidden');try{localStorage.setItem(INTRO_KEY,'1');}catch(e){}setTimeout(()=>{showMoyuThenContinue();},100);}}
 function shouldShowIntro(){try{return localStorage.getItem(INTRO_KEY)!=='1';}catch(e){return true;}}
 function showStartPanel(){
   const loaded=loadState();
