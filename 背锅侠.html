@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>背锅侠 - 第一季</title>
+<style>
+:root{--bg:#1a1a1a;--surface:#242424;--text:#c9c9c9;--text-dim:#8a8a8a;--accent:#d4a853;--accent-dim:#8b6914;--danger:#a8554f;--timer:#c94a3a;--choice-bg:#2a2a2a;--choice-hover:#353535;--divider:#333;--font-body:'PingFang SC','Microsoft YaHei','Helvetica Neue','Noto Sans SC',sans-serif;--font-dialogue:'LiSu','隶书','STLiti','Noto Serif SC',serif;--font-ui:'PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:17px;font-weight:500;line-height:2.0;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;-webkit-font-smoothing:antialiased}
+#app{width:100%;max-width:720px;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);padding-bottom:40px}
+#top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--divider);background:var(--surface);position:sticky;top:0;z-index:10;gap:14px}
+#top-bar .title{font-family:var(--font-dialogue);font-size:18px;font-weight:700;color:var(--accent);letter-spacing:0.08em;flex:1;min-width:0}
+#top-bar .chapter-tag{font-family:var(--font-ui);font-size:12px;color:var(--text-dim);background:var(--bg);padding:4px 12px;border-radius:12px;white-space:nowrap;flex-shrink:0}
+#top-bar button{background:none;border:1px solid var(--divider);color:var(--text-dim);font-size:20px;width:36px;height:36px;border-radius:8px;cursor:pointer;flex-shrink:0;transition:all 0.2s}
+#top-bar button:active{background:var(--choice-hover);color:var(--accent);border-color:var(--accent-dim)}
+#top-bar button.has-items{border-color:var(--accent-dim);color:var(--accent);animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,0.3)}50%{box-shadow:0 0 0 10px rgba(212,168,83,0)}}
+#story-area{flex:1;padding:24px 22px 14px;overflow-y:auto;scroll-behavior:smooth;display:flex;flex-direction:column;gap:16px}
+#story-area::-webkit-scrollbar{width:4px}#story-area::-webkit-scrollbar-thumb{background:var(--divider);border-radius:4px}
+.story-block{animation:fadeIn 0.4s ease-out}
+.story-block p{margin:0 0 14px 0;text-indent:2em;color:var(--text);font-size:17px;font-weight:500;line-height:2.0;letter-spacing:0.03em}
+.story-block p:last-child{margin-bottom:0}
+.story-block .dialogue{color:#e0d090;font-family:var(--font-dialogue);font-weight:700;font-size:18px;letter-spacing:0.04em;text-indent:2em}
+.story-block .inner-thought{color:var(--text-dim);font-size:15.5px;font-weight:400}
+.story-block .bold-line{font-weight:700;color:#e8d8a0}
+.story-block .timer-display{font-weight:700;color:var(--timer);font-size:20px;text-align:center;letter-spacing:0.05em;animation:timerPulse 1s infinite}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:0.7}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.divider-line{border:none;border-top:1px dashed var(--divider);margin:6px 0 12px;opacity:0.5}
+.scene-tag{font-family:var(--font-dialogue);font-size:14px;color:var(--accent-dim);letter-spacing:0.12em;text-align:center;padding:6px 0;opacity:0.8;font-weight:700}
+#choices-area{padding:14px 22px 20px;border-top:1px solid var(--divider);background:var(--bg);display:flex;flex-direction:column;gap:12px;min-height:60px}
+#choices-area .choice-label{font-family:var(--font-ui);font-size:12px;color:var(--text-dim);letter-spacing:0.08em;font-weight:600}
+.choice-btn{display:block;width:100%;text-align:left;background:var(--choice-bg);border:1px solid var(--divider);color:var(--text);font-family:var(--font-body);font-size:16.5px;font-weight:500;padding:16px 18px;border-radius:10px;cursor:pointer;line-height:1.6;letter-spacing:0.04em;transition:all 0.2s}
+.choice-btn:hover{background:var(--choice-hover);border-color:var(--accent-dim);color:#e8d8a0}
+.choice-btn .choice-num{display:inline-block;width:26px;height:26px;border-radius:50%;background:var(--accent-dim);color:var(--bg);text-align:center;line-height:26px;font-size:13px;font-weight:700;margin-right:12px;flex-shrink:0;font-family:var(--font-ui)}
+.choice-btn.item-use-btn{border-color:var(--accent-dim);background:#2a2418;color:#d4a853}
+.choice-btn.item-use-btn:hover{background:#3a3018;color:#e8c860}
+#item-alert{padding:14px 22px;border-top:1px solid var(--accent-dim);background:#1e1c14;display:none;flex-direction:column;gap:10px}
+#item-alert.show{display:flex}
+#item-alert .item-alert-title{font-family:var(--font-dialogue);color:var(--accent);font-size:15px;font-weight:700;letter-spacing:0.06em}
+#item-alert .item-alert-desc{color:var(--text-dim);font-size:14px;line-height:1.7}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:100;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.panel{background:var(--surface);border-radius:16px;width:88%;max-width:500px;max-height:70vh;overflow-y:auto;padding:24px 22px 32px;animation:popIn 0.3s ease-out;border:1px solid var(--divider)}
+@keyframes popIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+.panel h3{font-family:var(--font-dialogue);font-size:18px;color:var(--accent);margin-bottom:18px;letter-spacing:0.08em;text-align:center}
+.panel .item-card{background:var(--bg);border:1px solid var(--divider);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:15px;line-height:1.7}
+.panel .item-card .item-type{font-family:var(--font-ui);font-size:11px;letter-spacing:0.08em;color:var(--accent-dim);font-weight:600}
+.panel .item-card .item-name{font-weight:700;color:#e0d090;margin:3px 0;font-size:15.5px}
+.panel .item-card .item-desc{color:var(--text-dim);font-size:14px}
+.panel .empty-hint{text-align:center;color:var(--text-dim);padding:36px 0}
+.panel .close-btn{display:block;width:100%;padding:14px;background:var(--choice-bg);border:1px solid var(--divider);color:var(--text);border-radius:10px;font-size:16px;cursor:pointer;margin-top:14px;font-family:var(--font-ui);letter-spacing:0.05em;font-weight:600;text-align:center}
+.panel .close-btn:hover{background:var(--choice-hover)}
+#reminder-panel{text-align:center}
+#reminder-panel .reminder-icon{font-size:40px;margin-bottom:12px}
+#reminder-panel .reminder-text{font-size:16px;color:var(--text);margin-bottom:22px;line-height:1.8}
+#reminder-panel .reminder-btn{display:block;width:100%;padding:14px;margin-bottom:10px;border-radius:10px;border:1px solid var(--divider);background:var(--choice-bg);color:var(--text);font-size:16px;cursor:pointer;font-family:var(--font-body);transition:all 0.2s}
+#reminder-panel .reminder-btn:hover{background:var(--choice-hover);border-color:var(--accent-dim);color:#e8d8a0}
+#reminder-panel .reminder-btn.work-btn{background:#2a2222;border-color:#4a3535;color:#c9a0a0}
+#intro-panel{text-align:center}
+#intro-panel .intro-icon{font-size:44px;margin-bottom:14px}
+#intro-panel .intro-title{font-family:var(--font-dialogue);font-size:17px;color:var(--accent);letter-spacing:0.1em;margin-bottom:18px;font-weight:700}
+#intro-panel .intro-body{font-size:15.5px;color:var(--text);line-height:2.0;text-align:left;margin-bottom:22px}
+#intro-panel .intro-body p{margin-bottom:12px;text-indent:0}
+#intro-panel .intro-body .highlight{color:var(--danger);font-weight:700}
+#intro-panel .intro-body .dim{color:var(--text-dim)}
+#intro-panel .intro-btn{display:block;width:100%;padding:15px;border-radius:10px;border:1px solid var(--accent-dim);background:#2a2418;color:#d4a853;font-size:16px;cursor:pointer;font-family:var(--font-dialogue);letter-spacing:0.08em;font-weight:700;transition:all 0.2s}
+#intro-panel .intro-btn:hover{background:#3a3018;color:#e8c860}
+#intro-panel .intro-progress{display:flex;justify-content:center;gap:10px;margin-bottom:18px}
+#intro-panel .intro-progress .dot{width:10px;height:10px;border-radius:50%;background:var(--divider);transition:background 0.3s}
+#intro-panel .intro-progress .dot.active{background:var(--accent)}
+#moyu-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:350;display:flex;align-items:center;justify-content:center}
+#moyu-overlay.hidden{display:none}
+#moyu-overlay .moyu-text{font-family:var(--font-dialogue);font-size:20px;color:var(--accent);text-align:center;line-height:1.8;letter-spacing:0.06em;padding:0 30px;animation:moyuFadeIn 0.8s ease-out}
+@keyframes moyuFadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+#recap-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:340;display:flex;align-items:center;justify-content:center}
+#recap-overlay.hidden{display:none}
+#recap-panel{background:var(--surface);border-radius:16px;width:88%;max-width:540px;max-height:70vh;overflow-y:auto;padding:28px 24px 32px;animation:popIn 0.35s ease-out;border:1px solid var(--divider)}
+#recap-panel h3{font-family:var(--font-dialogue);font-size:18px;color:var(--accent);margin-bottom:18px;letter-spacing:0.08em;text-align:center}
+#recap-panel .recap-block{margin-bottom:16px;font-size:15px;line-height:1.9;color:var(--text)}
+#recap-panel .recap-block .recap-label{color:var(--accent-dim);font-weight:700;font-size:13px;letter-spacing:0.06em;margin-bottom:4px}
+#recap-panel .recap-btn{display:block;width:100%;padding:14px;background:var(--choice-bg);border:1px solid var(--accent-dim);color:var(--accent);border-radius:10px;font-size:16px;cursor:pointer;margin-top:18px;font-family:var(--font-dialogue);letter-spacing:0.06em;font-weight:700;text-align:center;transition:all 0.2s}
+#recap-panel .recap-btn:hover{background:#2a2418;color:#e8c860}
+#chapter-select{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:360;display:flex;align-items:center;justify-content:center}
+#chapter-select.hidden{display:none}
+#chapter-select-panel{background:var(--surface);border-radius:16px;width:88%;max-width:500px;max-height:70vh;overflow-y:auto;padding:28px 24px 32px;animation:popIn 0.35s ease-out;border:1px solid var(--divider)}
+#chapter-select-panel h3{font-family:var(--font-dialogue);font-size:18px;color:var(--accent);margin-bottom:18px;letter-spacing:0.08em;text-align:center}
+#chapter-select-panel .chapter-item{display:block;width:100%;padding:12px 16px;margin-bottom:8px;background:var(--choice-bg);border:1px solid var(--divider);color:var(--text);border-radius:8px;cursor:pointer;font-size:15px;text-align:left;font-family:var(--font-body);transition:all 0.2s}
+#chapter-select-panel .chapter-item:hover{background:var(--choice-hover);border-color:var(--accent-dim);color:#e8d8a0}
+#chapter-select-panel .chapter-item.locked{color:var(--text-dim);cursor:not-allowed;opacity:0.5}
+#chapter-select-panel .chapter-item.locked:hover{background:var(--choice-bg);border-color:var(--divider);color:var(--text-dim)}
+#chapter-select-panel .chapter-item .ch-num{display:inline-block;width:24px;height:24px;border-radius:50%;background:var(--accent-dim);color:var(--bg);text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:10px;font-family:var(--font-ui)}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="top-bar"><span class="title">背锅侠</span><span class="chapter-tag" id="chapter-label">第一章·入职</span><button id="btn-backpack" title="道具背包">🎒</button><button id="btn-chapters" title="章节选择" style="margin-left:4px">📖</button></div>
+<div id="story-area"></div>
+<div id="item-alert"></div>
+<div id="choices-area"></div>
+</div>
+<div id="moyu-overlay" class="hidden"><div class="moyu-text" id="moyu-text"></div></div>
+<div id="recap-overlay" class="hidden"><div id="recap-panel"><h3>📺 前情提要</h3><div id="recap-content"></div><button class="recap-btn" id="recap-continue">继续</button></div></div>
+<div id="chapter-select" class="hidden"><div id="chapter-select-panel"><h3>📖 章节选择</h3><div id="chapter-list"></div><button class="close-btn" id="chapter-select-close">关闭</button></div></div>
+<div class="overlay" id="backpack-overlay"><div class="panel" id="backpack-panel"><h3>📋 道具背包</h3><div id="backpack-items"></div><button class="close-btn" id="backpack-close">关闭</button></div></div>
+<div class="overlay" id="reminder-overlay"><div class="panel" id="reminder-panel"><div class="reminder-icon">⏰</div><div class="reminder-text" id="reminder-msg"></div><button class="reminder-btn" id="reminder-continue">继续摸鱼</button><button class="reminder-btn work-btn" id="reminder-work">回去干活</button></div></div>
+<div class="overlay" id="intro-overlay"><div class="panel" id="intro-panel"><div class="intro-progress" id="intro-dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div><div class="intro-icon" id="intro-icon">⚠️</div><div class="intro-title" id="intro-title"></div><div class="intro-body" id="intro-body"></div><button class="intro-btn" id="intro-confirm"></button></div></div>
+<script>
+(function(){
+const STATE_KEY='beiguoxia_save';const REMINDER_KEY='beiguoxia_reminder';const INTRO_KEY='beiguoxia_intro_shown';
+const state={season:1,chapter:1,sceneId:'ch1_scene1',inventory:[],choices:[],finished:false,seasonsUnlocked:1,lastSave:null,chapterRecaps:{}};
+const CHAPTER_TITLES=['第一章·入职','第二章·文件','第三章·短会','第四章·首轮考核','第五章·流程陷阱','第六章·限时锁单','第七章·编制红线','第八章·全盘施压','第九章·全面引爆','第十章·工位空位','第十一章·疑点','第十二章·调查','第十三章·察觉','第十四章·封路','第十五章·底牌','第十六章·抉择','第十七章·暗线','第十八章·收网','第十九章·翻盘','第二十章·终局'];
+const CHAPTER_IDS=['ch1_','ch2_','ch3_','ch4_','ch5_','ch6_','ch7_','ch8_','ch9_','ch10_','ch11_','ch12_','ch13_','ch14_','ch15_','ch16_','ch17_','ch18_','ch19_','ch20_'];
+
+const ITEMS={
+chenmo_note:{id:'chenmo_note',name:'陈默手写避坑便签',type:'memento',season:1,desc:'"赵东升递的烟别接。"'},
+wang_hint:{id:'wang_hint',name:'王总隐晦提点暗示',type:'clue',season:1,desc:'"慎。"'},
+negative_photo:{id:'negative_photo',name:'赵东升持有翻阅违规文件照片',type:'evidence',season:1,desc:'【负面伏笔】',negative:true},
+frontdesk_intel:{id:'frontdesk_intel',name:'前台口述部门绝境情报',type:'clue',season:1,desc:'前台透露：项目部是公司专门招人进来兜底背锅的。'},
+exam_loophole:{id:'exam_loophole',name:'标注漏洞的考核细则',type:'clue',season:1,desc:'竞品部门优先调取所有原始数据，我方无优先权限。'},
+zhoujie_intel:{id:'zhoujie_intel',name:'周姐口述高层派系情报',type:'clue',season:1,desc:'"偏心从来不是巧合，项目部就是用来垫底的。"'},
+wang_blankchat:{id:'wang_blankchat',name:'王总手机空白对话框',type:'clue',season:1,desc:'王总手机页面停留在和陈默的空白对话框。'},
+sun_observation:{id:'sun_observation',name:'孙总办公室窗帘微动观察记录',type:'evidence',season:1,desc:'退回数据表后，孙总办公室窗帘微动。'},
+sealed_file:{id:'sealed_file',name:'陈默封存的造假数据文件袋',type:'evidence',season:1,desc:'小林送来的完整数据表，陈默贴便利贴封死。'},
+returned_data:{id:'returned_data',name:'退回陷阱数据的记录',type:'evidence',season:1,desc:'你当场退回数据表，赵东升脸上假笑彻底碎裂。'},
+lowkey_record:{id:'lowkey_record',name:'低调入职空白记录',type:'evidence',season:1,desc:'入职登记表上的信息寥寥无几。'},
+zhao_checklist:{id:'zhao_checklist',name:'赵东升摸排新人登记表',type:'clue',season:1,desc:'赵东升提前调阅了你的入职材料。'},
+sunzhao_photo:{id:'sunzhao_photo',name:'孙赵私下授意抓拍照片',type:'evidence',season:1,desc:'走廊里孙总与赵东升低声交谈的抓拍。'},
+blank_ledger:{id:'blank_ledger',name:'无数据工作空白台账',type:'evidence',season:1,desc:'项目部台账上季度数据大量缺失。'},
+zhao_recording:{id:'zhao_recording',name:'赵东升刻意扣押资料录音',type:'evidence',season:1,desc:'赵东升在走廊说："项目部要的数据先压着。"'},
+tampered_doc:{id:'tampered_doc',name:'篡改数据密封原件',type:'evidence',season:1,desc:'跨部门协调记录中被篡改的原始数据。'},
+meeting_recording:{id:'meeting_recording',name:'会议重点录音',type:'evidence',season:1,desc:'孙总宣称"公平公正各凭本事"的录音。'},
+oa_screenshot_ch2:{id:'oa_screenshot_ch2',name:'孙总考核补充OA截图',type:'clue',season:1,desc:'考核补充条例，抄送记录中留有王总审阅痕迹。'},
+tampered_cover:{id:'tampered_cover',name:'涂改封皮项目文件',type:'evidence',season:1,desc:'封皮边角有刻意涂改、重新粘贴的痕迹。'},
+security_label_photo:{id:'security_label_photo',name:'文件保密等级标签照片',type:'clue',season:1,desc:'仅限竞品部内部人员查阅、外部人员禁止调阅。'},
+zhoujie_hr_intel:{id:'zhoujie_hr_intel',name:'周姐口述人事调整情报',type:'clue',season:1,desc:'孙总近期正在筹备内部人事调整。'},
+tearoom_recording:{id:'tearoom_recording',name:'茶水间闲谈录音',type:'evidence',season:1,desc:'完整录下刘伟和周姐的闲聊内容。'},
+monitor_record:{id:'monitor_record',name:'完整转交文件监控时间记录',type:'evidence',season:1,desc:'在工位监控可视范围内完整转交未拆封文件。'},
+oa_approval_screenshot:{id:'oa_approval_screenshot',name:'高层OA批注截图',type:'clue',season:1,desc:'王总批注：审慎核查。'},
+oa_judge_panel:{id:'oa_judge_panel',name:'评委组调整OA公示截图',type:'clue',season:1,desc:'三名评委均为孙总直属竞品部门人员。'},
+liuwei_gossip:{id:'liuwei_gossip',name:'刘伟内部闲谈情报',type:'clue',season:1,desc:'赵东升上周请孙总吃饭，两个人点了六个菜。'},
+lijie_checklist:{id:'lijie_checklist',name:'李姐的评分应对清单',type:'memento',season:1,desc:'实战排坑经验总结，不违规、不站队。'},
+round1_score_screenshot:{id:'round1_score_screenshot',name:'第一轮评分结果OA截图',type:'clue',season:1,desc:'赵东升58分vs周姐72分。'},
+dual_score_compare:{id:'dual_score_compare',name:'双评委打分对比记录',type:'evidence',season:1,desc:'评分标准不统一的直观证据。'},
+wang_process_note:{id:'wang_process_note',name:'王总流程批注备查记录',type:'clue',season:1,desc:'请评委会完整留存原始评分依据，全程备查。'},
+zhao_trap_screenshot:{id:'zhao_trap_screenshot',name:'赵东升问题协查单原始截图',type:'evidence',season:1,desc:'加急跨部门协查单，附件为废弃V2旧版。'},
+v2v3_compare:{id:'v2v3_compare',name:'V2/V3数据版本对比存档',type:'evidence',season:1,desc:'V2废弃版与V3定稿版的差异对比。'},
+wang_rooftop_hint:{id:'wang_rooftop_hint',name:'王总天台关键词提示记录',type:'clue',season:1,desc:'王总在天台吐出三字："版本号。"'},
+oa_lock_screenshot:{id:'oa_lock_screenshot',name:'OA工单限时锁屏截图',type:'evidence',season:1,desc:'全员工单被锁，90分钟倒计时。'},
+admin_log_record:{id:'admin_log_record',name:'系统管理员操作日志查询记录',type:'evidence',season:1,desc:'锁单操作人为系统管理员，时间戳为昨晚23:47。'},
+wang_key_dialogue:{id:'wang_key_dialogue',name:'王总关键对话记录',type:'clue',season:1,desc:'王总："流程双签。可行。"下放临时解锁权限。'},
+verify_record:{id:'verify_record',name:'档案室合规核验单归档记录',type:'evidence',season:1,desc:'解锁闭环凭证。'},
+delay_warning:{id:'delay_warning',name:'履约延误预判通知截图',type:'evidence',season:1,desc:'锁单期间自动生成的隐形通知。'},
+org_optimize_oa:{id:'org_optimize_oa',name:'编制优化方案OA公示截图',type:'evidence',season:1,desc:'孙总签发的季度部门编制优化考核方案。'},
+zhoujie_replace_approval:{id:'zhoujie_replace_approval',name:'周姐财务流程评价替代批复单',type:'clue',season:1,desc:'唯一合规破局通道凭证。'},
+dept_selfcheck_report:{id:'dept_selfcheck_report',name:'项目部自查补充报告',type:'evidence',season:1,desc:'团队主动设防标志性文件。'},
+abnormal_fund_record:{id:'abnormal_fund_record',name:'竞品部异常资金流转记录',type:'evidence',season:1,desc:'长线暗线核心伏笔。'},
+new_rule_oa:{id:'new_rule_oa',name:'新版考核规则OA公示截图',type:'evidence',season:1,desc:'取消自评申诉、关闭财务替代、压缩应急时限。'},
+urgent_record:{id:'urgent_record',name:'应急工单时效处置记录',type:'evidence',season:1,desc:'新规首日承压结果留存。'},
+zhao_pressure_record:{id:'zhao_pressure_record',name:'赵东升全阶段对话记录',type:'evidence',season:1,desc:'从伪装到笃定的全程施压记录。'},
+chenmo_abnormal_log:{id:'chenmo_abnormal_log',name:'陈默反常行为观察记录',type:'clue',season:1,desc:'屏幕陌生页面、午休不喝咖啡、提前离岗、手机倒扣。'},
+sun_draft_rule:{id:'sun_draft_rule',name:'孙总规则修订未发布草稿',type:'evidence',season:1,desc:'后台草稿：取消部门自评申诉通道。'},
+liability_draft:{id:'liability_draft',name:'连带追责机制草稿通知',type:'clue',season:1,desc:'明日将新增部门负责人连带追责机制。'},
+liability_doc:{id:'liability_doc',name:'连带责任条款签字文件副本',type:'evidence',season:1,desc:'本人确认数据无误，承担全部连带责任。'},
+sun_audit_record:{id:'sun_audit_record',name:'孙总现场审核对话记录',type:'evidence',season:1,desc:'温柔杀局核心凭证。'},
+chenmo_sacrifice_record:{id:'chenmo_sacrifice_record',name:'陈默扛雷原话记录',type:'clue',season:1,desc:'"数据是我经手的。不用查了。"'},
+chenmo_last_note:{id:'chenmo_last_note',name:'陈默复刻首日便利贴',type:'memento',season:1,desc:'"咖啡自己冲。我就那三包。"'},
+chenmo_last_memo:{id:'chenmo_last_memo',name:'陈默末次工单备注记录',type:'clue',season:1,desc:'"数据V3版已核。附件路径：/财务/周姐/季度凭证/未归档/"'},
+zhao_unmasked_record:{id:'zhao_unmasked_record',name:'赵东升无伪装催单对话记录',type:'evidence',season:1,desc:'伪善人设终结凭证。'},
+chenmo_prehire_note:{id:'chenmo_prehire_note',name:'陈默入职前便利贴',type:'clue',season:1,desc:'"3/12 下午3:15 孙总办公室"'},
+chenmo_pencil_note:{id:'chenmo_pencil_note',name:'陈默旧台账铅笔字迹记录',type:'clue',season:1,desc:'"数据已核，别再催了"'},
+zhao_probe_record:{id:'zhao_probe_record',name:'赵东升套话警告对话记录',type:'evidence',season:1,desc:'"有什么问题直接问我就行。"'},
+zhoujie_blank_record:{id:'zhoujie_blank_record',name:'周姐留白对话记录',type:'clue',season:1,desc:'"她调过一些报销凭证。你可以自己翻翻看。"'},
+oa_log_clean_screenshot:{id:'oa_log_clean_screenshot',name:'OA针对性日志清理截屏',type:'evidence',season:1,desc:'第九章后的批量清理记录。'},
+zhao_double_warning:{id:'zhao_double_warning',name:'赵东升双次警告对话记录',type:'evidence',season:1,desc:'"细看看不出花来。"'},
+oa_permission_downgrade:{id:'oa_permission_downgrade',name:'OA权限降级日志截屏',type:'evidence',season:1,desc:'系统封路实证。'},
+sun_new_rule_loophole:{id:'sun_new_rule_loophole',name:'孙总新规全文+纸质凭证漏洞标注',type:'clue',season:1,desc:'电子归档全封禁，纸质凭证不受管辖。'},
+anonymous_warning:{id:'anonymous_warning',name:'匿名OA警告消息截屏',type:'evidence',season:1,desc:'"别再查了。下次不是降权限。"'},
+three_voucher_photos:{id:'three_voucher_photos',name:'三笔异常资金流转凭证照片',type:'evidence',season:1,desc:'含孙总签字、盛恒银行信息。'},
+qiansihai_link:{id:'qiansihai_link',name:'四海集团-钱四海关联检索记录',type:'clue',season:1,desc:'外部暗线首次实锤。'},
+finance_register_record:{id:'finance_register_record',name:'财务档案查阅登记表留底',type:'evidence',season:1,desc:'双刃剑合规痕迹。'},
+wang_dont_reveal:{id:'wang_dont_reveal',name:'王总OA私信「别亮身份」截屏',type:'clue',season:1,desc:'长线核心伏笔。'},
+liuwei_intel_record:{id:'liuwei_intel_record',name:'刘伟情报记录',type:'clue',season:1,desc:'赵东升每日14:00-15:00固定外出窗口。'},
+chenmo_email:{id:'chenmo_email',name:'陈默个人邮箱邮件截屏',type:'clue',season:1,desc:'"准备好了吗？"'},
+chenmo_usb:{id:'chenmo_usb',name:'陈默加密U盘',type:'evidence',season:1,desc:'含三年资金流水、异常合同扫描件、亲笔布局证词。'},
+chenmo_testimony:{id:'chenmo_testimony',name:'陈默证词关键内容摘要',type:'clue',season:1,desc:'全季苦肉计、内外布局完整记录。'},
+final_score_record:{id:'final_score_record',name:'最终考核评分记录',type:'evidence',season:1,desc:'项目部保岗胜诉官方凭证。'},
+sun_suspend_minutes:{id:'sun_suspend_minutes',name:'孙总评委资格暂停会议纪要',type:'evidence',season:1,desc:'制度性追责依据。'},
+chenmo_reinstatement:{id:'chenmo_reinstatement',name:'陈默复职公告截屏',type:'memento',season:1,desc:'全季情感收官纪念道具。'},
+qiansihai_news:{id:'qiansihai_news',name:'钱四海新闻推送截屏',type:'clue',season:1,desc:'四海集团增资扩股，第二季核心伏笔道具。'},
+};
+
+const CHAPTER_SUMMARIES=[
+{summary:'你以047身份入职项目部，前台直言这部门是背锅专用。陈默给了避坑便利贴，王总吐了一个"慎"字。下午小林送来完整数据表，陈默按住鼠标警告你别碰。',keyChoice:'',keyItem:''},
+{summary:'赵东升以跨部门协同为名甩来文件陷阱。陈默当场挡雷，张野冷面提醒"有坑"。你在档案室门口做出关键选择，下午面对逼拆文件做出了应对。',keyChoice:'',keyItem:''},
+{summary:'孙总首次正面亮相，宣布评委组全员换血。赵东升当众定性你的工作态度，陈默公开挡雷。王总提示"周姐是你唯一的突破口"。',keyChoice:'',keyItem:''},
+{summary:'首轮考核正式启动，赵东升打出58分vs周姐72分。陈默公开质疑评分口径，王总OA批注"留底备查"。',keyChoice:'',keyItem:''},
+{summary:'赵东升以V2/V3版本陷阱埋雷，陈默提点不代劳。刘伟首次实战避坑，王总天台吐出"版本号"。团队默契初步成型。',keyChoice:'',keyItem:''},
+{summary:'全员工单被副总级权限锁死，90分钟倒计时。你找到王总，以流程双签机制解锁。最后三秒工单解锁，团队活了下来。',keyChoice:'',keyItem:''},
+{summary:'孙总落地编制优化方案，48小时自证窗口。你发现竞品部异常资金记录，陈默首次反常。后台草稿预示规则迭代。',keyChoice:'',keyItem:''},
+{summary:'孙总新版考核规则落地，封死全部自救通道。赵东升三次施压，陈默反常峰值。你探知了明日连带追责的引爆点。',keyChoice:'',keyItem:''},
+{summary:'孙总亲自设计签字陷阱，陈默主动扛雷。无论你如何选择，她必然入局。全季情感转折点，三条愧疚路径。',keyChoice:'',keyItem:''},
+{summary:'陈默离场后第一日。五处空位错位：晨间转头、刘伟多冲咖啡、李姐咽话、张野静默、走廊幻听。',keyChoice:'',keyItem:''},
+{summary:'整理陈默遗留纸质档案，发现入职前便利贴"3/12下午3:15孙总办公室"。李姐"不说破"，赵东升套话。',keyChoice:'',keyItem:''},
+{summary:'主动调查全面碰壁：OA日志被清理、监控需孙总审批、周姐留口。赵东升升级警告。章末王总约天台。',keyChoice:'',keyItem:''},
+{summary:'天台密谈获模糊线索，翻查凭证锁定资金疑点。OA权限精准降级，主角首次察觉被实时监控。',keyChoice:'',keyItem:''},
+{summary:'孙总出台全域封路新规，赵东升入驻项目部两米贴身监视。匿名警告空降。在规则细则中找到纸质凭证唯一裂缝。',keyChoice:'',keyItem:''},
+{summary:'借报销掩护突破纸质凭证漏洞，拿到三笔异常资金实锤。锁定盛恒商业银行关联四海集团，首次触及钱四海。走廊被赵东升截住。',keyChoice:'',keyItem:''},
+{summary:'孙总温和约谈封口，赵东升核查财务登记痕迹。王总四字私信"别亮身份"敲定潜伏路线。刘伟最后一杯咖啡后正式结盟。',keyChoice:'',keyItem:''},
+{summary:'刘伟交付烟盒观察法情报，锁定赵东升固定外出窗口。纸质凭证与照片核验闭环，走廊小林无声对视。陈默破冰邮件"准备好了吗？"',keyChoice:'',keyItem:''},
+{summary:'陈默时隔九章正式回归咖啡店，揭露全季真相：与王总合演苦肉计、主动入局签字陷阱、外部蛰伏取证。交付加密U盘。',keyChoice:'',keyItem:''},
+{summary:'最终考核擂台，赵东升携登记记录发难。U盘举证反杀，孙总评委资格被暂停。身份抉择。阿杰工装三代人接力伏笔闭环。',keyChoice:'',keyItem:''},
+{summary:'',keyChoice:'',keyItem:''},
+];
+
+const MOYU_QUOTES=['月薪三千，玩什么命。资本家给你画饼，你给资本家摸鱼，这叫礼尚往来。','公司只买了你每天八小时，没买你的命。剩下的时间，是赠品。','加班是能力不足的表现，摸鱼是薪资倒挂的反击。','合理的摸鱼，是对这份工资最基本的尊重。'];
+
+const INTRO_SCREENS=[{icon:'⚠️',title:'友情提示（虽然我们之间没什么友情）',body:'<p>本游戏<span class="highlight">没有读档功能</span>。</p><p>选错了就是选错了。坑踩了就是踩了。人被开除了就是开除了。</p><p>别指望我们会惯着你。</p>',btn:'知道了，继续。'},{icon:'🚫',title:'免责声明（甩锅声明）',body:'<p>自动存档仅用于防止浏览器崩溃。存档只有一个，选择一旦做出，覆盖式写入，不可逆。</p><p class="dim">想反复试选项？去玩消消乐。</p>',btn:'行，不指望你们。'},{icon:'💀',title:'最后一句人话',body:'<p>赵东升不会给你第二次机会。陈默的便利贴不会自己贴到你键盘上。<span class="highlight">你只能靠自己。</span></p><p>准备好对你的每一个选择负责了吗？</p>',btn:'知道了，别废话了，进公司。'}];
+
+const $=id=>document.getElementById(id);
+const storyArea=$('story-area'),choicesArea=$('choices-area'),itemAlert=$('item-alert'),chapterLabel=$('chapter-label');
+const btnBackpack=$('btn-backpack'),btnChapters=$('btn-chapters'),backpackOverlay=$('backpack-overlay'),backpackItems=$('backpack-items'),backpackClose=$('backpack-close');
+const reminderOverlay=$('reminder-overlay'),reminderMsg=$('reminder-msg'),reminderContinue=$('reminder-continue'),reminderWork=$('reminder-work');
+const introOverlay=$('intro-overlay'),introIcon=$('intro-icon'),introTitle=$('intro-title'),introBody=$('intro-body'),introConfirm=$('intro-confirm'),introDots=$('intro-dots');
+const moyuOverlay=$('moyu-overlay'),moyuText=$('moyu-text');
+const recapOverlay=$('recap-overlay'),recapContent=$('recap-content'),recapContinue=$('recap-continue');
+const chapterSelect=$('chapter-select'),chapterList=$('chapter-list'),chapterSelectClose=$('chapter-select-close');
+
+function saveState(){state.lastSave=Date.now();try{localStorage.setItem(STATE_KEY,JSON.stringify(state));}catch(e){}}
+function loadState(){try{const raw=localStorage.getItem(STATE_KEY);if(raw){const p=JSON.parse(raw);if(!p.hasOwnProperty('season'))p.season=1;if(!p.hasOwnProperty('seasonsUnlocked'))p.seasonsUnlocked=p.season||1;if(!p.hasOwnProperty('chapterRecaps'))p.chapterRecaps={};if(p.choices)p.choices=p.choices.map(c=>({...c,season:c.season||p.season||1,chapter:c.chapter||p.chapter||1}));if(p.inventory)p.inventory=p.inventory.filter(id=>ITEMS[id]);Object.assign(state,p);return true;}}catch(e){}return false;}
+function addItem(id){if(ITEMS[id]&&!state.inventory.includes(id)){state.inventory.push(id);updateBadge();saveState();}}
+function hasItem(id){return state.inventory.includes(id);}
+function removeItem(id){const i=state.inventory.indexOf(id);if(i>=0){state.inventory.splice(i,1);updateBadge();saveState();}}
+function updateBadge(){if(state.inventory.length>0){btnBackpack.classList.add('has-items');btnBackpack.textContent='🎒'+state.inventory.length;}else{btnBackpack.classList.remove('has-items');btnBackpack.textContent='🎒';}}
+function renderBackpack(){backpackItems.innerHTML='';if(state.inventory.length===0){backpackItems.innerHTML='<div class="empty-hint">背包空空如也。</div>';}else{state.inventory.forEach(id=>{const item=ITEMS[id];if(!item)return;const card=document.createElement('div');card.className='item-card';card.innerHTML=`<div class="item-type">${item.type==='evidence'?'一次性物证':item.type==='clue'?'一次性线索':'情感纪念'}${item.negative?' · 负面伏笔':''}</div><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div>`;backpackItems.appendChild(card);});}}
+function openBackpack(){renderBackpack();backpackOverlay.classList.add('show');}
+function closeBackpack(){backpackOverlay.classList.remove('show');}
+
+const REMINDER_POOL=[{msg:'嘿朋友，你已经摸鱼<span style="color:#d4a853">1小时</span>了，当心资本家的铡刀。',c:'只要我不努力，资本家就不会有好日子过。',w:'好吧，在资本家面前，再高贵的头颅也只能卑微低下。'},{msg:'⚠️ 系统检测到人类已持续摆烂<span style="color:#d4a853">1小时</span>。你的工资正在以每分钟0.0003元的速度白白流失。',c:'算了一下，还能再摸五十年。',w:'行吧，动一下。'},{msg:'📢 友情播报：你已经摸了<span style="color:#d4a853">1小时</span>的鱼。隔壁工位的同事已经帮你打了三次掩护了。',c:'隔壁同事够义气，改天请他喝奶茶。',w:'不给他添麻烦了，回去干活。'},{msg:'💀 来自你良心的弹窗：打开电脑<span style="color:#d4a853">1小时</span>了，生产力为零。连Word文档都是空白的。',c:'空白文档怎么了，它干净。',w:'行行行，写两行字意思一下。'}];
+let reminderIdx=0;
+function showReminder(){const r=REMINDER_POOL[reminderIdx%REMINDER_POOL.length];reminderIdx++;reminderMsg.innerHTML=r.msg;reminderContinue.textContent='① '+r.c;reminderWork.textContent='② '+r.w;reminderOverlay.classList.add('show');}
+function hideReminder(){reminderOverlay.classList.remove('show');}
+function resetReminderTimer(){localStorage.setItem(REMINDER_KEY,Date.now().toString());}
+function checkReminder(){const last=localStorage.getItem(REMINDER_KEY);if(!last){resetReminderTimer();return;}if(Date.now()-parseInt(last)>=60*60*1000){showReminder();resetReminderTimer();}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)resetReminderTimer();});setInterval(checkReminder,60000);
+
+let introIdx=0;
+function showIntroScreen(idx){introIdx=idx;const s=INTRO_SCREENS[idx];introIcon.textContent=s.icon;introTitle.textContent=s.title;introBody.innerHTML=s.body;introConfirm.textContent=s.btn;introDots.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));introOverlay.classList.add('show');}
+function advanceIntro(){if(introIdx<INTRO_SCREENS.length-1){showIntroScreen(introIdx+1);}else{introOverlay.classList.add('hidden');try{localStorage.setItem(INTRO_KEY,'1');}catch(e){}showMoyuThenContinue();}}
+function shouldShowIntro(){try{return localStorage.getItem(INTRO_KEY)!=='1';}catch(e){return true;}}
+function showStartPanel(){
+  const loaded=loadState();
+  const hasSave=loaded&&state.chapter>=1;
+  const overlay=document.createElement('div');
+  overlay.id='start-panel-overlay';
+  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:400;display:flex;align-items:center;justify-content:center;';
+  const panel=document.createElement('div');
+  panel.style.cssText='background:var(--surface);border-radius:16px;width:88%;max-width:460px;padding:32px 24px;animation:popIn 0.35s ease-out;border:1px solid var(--divider);text-align:center;';
+  panel.innerHTML='<h3 style="font-family:var(--font-dialogue);font-size:18px;color:var(--accent);margin-bottom:22px;letter-spacing:0.08em;">📋 背锅侠 · 第一季</h3>'+(hasSave?'<p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;">检测到存档：第'+state.chapter+'章 '+(state.finished?'已通关':'进行中')+'<br>道具：'+state.inventory.length+'件</p>':'<p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;">未检测到存档</p>')+'<button id="start-new-btn" style="display:block;width:100%;padding:14px;margin-bottom:10px;background:var(--choice-bg);border:1px solid var(--accent-dim);color:var(--accent);border-radius:10px;font-size:16px;cursor:pointer;font-family:var(--font-dialogue);letter-spacing:0.06em;font-weight:700;">🆕 从头开始</button>'+(hasSave?'<button id="start-continue-btn" style="display:block;width:100%;padding:14px;margin-bottom:10px;background:#2a2418;border:1px solid var(--accent-dim);color:#d4a853;border-radius:10px;font-size:16px;cursor:pointer;font-family:var(--font-dialogue);letter-spacing:0.06em;font-weight:700;">▶ 继续上次进度</button>':'')+'<button id="start-chapter-btn" style="display:block;width:100%;padding:14px;background:var(--choice-bg);border:1px solid var(--divider);color:var(--text-dim);border-radius:10px;font-size:15px;cursor:pointer;font-family:var(--font-body);letter-spacing:0.05em;">📖 章节选择</button>';
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  $('start-new-btn').addEventListener('click',()=>{overlay.remove();state.chapter=1;state.sceneId='ch1_scene1';state.inventory=[];state.choices=[];state.finished=false;state.seasonsUnlocked=1;state.chapterRecaps={};saveState();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[0];startChapter(1);});
+  if(hasSave){$('start-continue-btn').addEventListener('click',()=>{overlay.remove();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[state.chapter-1];if(state.finished&&state.chapter<20){const next=state.chapter+1;state.chapter=next;state.sceneId='ch'+next+'_scene1';state.finished=false;saveState();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[next-1];if(next>1){showRecap(next);}else{startChapter(next);}}else if(state.sceneId&&state.sceneId!=='__end__'){renderScene(state.sceneId);}else if(state.finished&&state.chapter===20){updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[19];appendTag('【第一季·全剧终】');appendBlock({type:'thought',text:'检测到存档：全20章已完成。'});appendBlock({type:'thought',text:'感谢游玩《背锅侠》第一季。'});choicesArea.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:16px;">全季完结 🏁</div>';}else{startChapter(state.chapter);}});}
+  $('start-chapter-btn').addEventListener('click',()=>{overlay.remove();loadState();updateBadge();clearStory();renderChapterSelect();});
+}
+function showMoyuThenContinue(){const quote=MOYU_QUOTES[Math.floor(Math.random()*MOYU_QUOTES.length)];moyuText.textContent=quote;moyuOverlay.classList.remove('hidden');setTimeout(()=>{moyuOverlay.classList.add('hidden');showStartPanel();},4000);}
+
+function buildRecap(chapterNum){
+  const prev=chapterNum-1;
+  const items=state.inventory.filter(id=>ITEMS[id]&&ITEMS[id].season===1).map(id=>ITEMS[id].name);
+  const ch=state.choices.filter(c=>c.chapter===prev);
+  let summary='回顾数据缺失';
+  let keyChoice='应对了关键局面';
+  if(prev===0){
+    summary='你以047身份入职项目部，前台直言这部门是背锅专用。陈默给了避坑便利贴，王总吐了一个"慎"字。下午小林送来完整数据表，陈默按住鼠标警告你别碰。';
+    if(ch.some(c=>c.sceneId==='ch1_scene6'&&c.choiceIndex===0))keyChoice='收下归档留存';
+    else if(ch.some(c=>c.sceneId==='ch1_scene6'&&c.choiceIndex===1))keyChoice='当场退回';
+  }else if(CHAPTER_SUMMARIES[prev-1]){
+    summary=CHAPTER_SUMMARIES[prev-1].summary;
+    if(ch.some(c=>c.consumeItem))keyChoice='消耗了关键道具';
+    else if(ch.length>0)keyChoice='做出了关键选择';
+  }
+  return{summary,keyChoice,itemList:items.length>0?items.join('、'):'无'};
+}
+
+function showRecap(chapterNum){
+  const recap=buildRecap(chapterNum);
+  recapContent.innerHTML=`<div class="recap-block"><div class="recap-label">📖 上一章回顾</div><div>${recap.summary}</div></div><div class="recap-block"><div class="recap-label">🔑 关键选择</div><div>你<strong style="color:#e0d090">【${recap.keyChoice}】</strong>。</div></div><div class="recap-block"><div class="recap-label">🎒 持有道具</div><div>${recap.itemList}</div></div>`;
+  recapOverlay.classList.remove('hidden');
+}
+function hideRecap(){recapOverlay.classList.add('hidden');startChapter(state.chapter);}
+
+function renderChapterSelect(){
+  chapterList.innerHTML='';
+  for(let i=1;i<=20;i++){
+    const item=document.createElement('button');
+    item.className='chapter-item'+(i<=state.seasonsUnlocked?'':' locked');
+    item.innerHTML=`<span class="ch-num">${i}</span>${CHAPTER_TITLES[i-1]}`;
+    if(i<=state.seasonsUnlocked){
+      item.addEventListener('click',()=>{
+        chapterSelect.classList.add('hidden');
+        state.chapter=i;state.sceneId='ch'+i+'_scene1';state.finished=false;saveState();
+        updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[i-1];
+        if(i>1&&state.chapterRecaps[i-1]){showRecap(i);}else{startChapter(i);}
+      });
+    }
+    chapterList.appendChild(item);
+  }
+  chapterSelect.classList.remove('hidden');
+}
+
+function continueAfterMoyu(){
+  const loaded=loadState();
+  if(!loaded){
+    state.chapter=1;state.sceneId='ch1_scene1';state.finished=false;state.seasonsUnlocked=1;
+    saveState();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[0];startChapter(1);return;
+  }
+  if(state.finished&&state.chapter===20){
+    updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[19];
+    appendTag('【第一季·全剧终】');
+    appendBlock({type:'thought',text:'检测到存档：全20章已完成。道具背包中有 '+state.inventory.length+' 件道具。'});
+    appendBlock({type:'thought',text:'感谢游玩《背锅侠》第一季。'});
+    choicesArea.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:16px;">全季完结 🏁<br><span style="font-size:13px;">可通过章节选择器回顾任意章节</span></div>';
+    return;
+  }
+  if(state.finished&&state.chapter<20){
+    const nextChapter=state.chapter+1;
+    state.chapter=nextChapter;state.sceneId='ch'+nextChapter+'_scene1';state.finished=false;saveState();
+    updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[nextChapter-1];
+    if(nextChapter>1){showRecap(nextChapter);}else{startChapter(nextChapter);}
+    return;
+  }
+  updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[state.chapter-1];
+  if(state.sceneId&&state.sceneId!=='__end__'){renderScene(state.sceneId);}else{startChapter(state.chapter);}
+}
+
+function clearStory(){storyArea.innerHTML='';choicesArea.innerHTML='';itemAlert.classList.remove('show');itemAlert.innerHTML='';}
+function appendBlock(b){const div=document.createElement('div');div.className='story-block';let text=b.text;if(typeof text==='function')text=text();const cls=b.type==='dialogue'?'dialogue':b.type==='thought'?'inner-thought':b.type==='timer'?'timer-display':b.type==='bold'?'bold-line':'';div.innerHTML=`<p class="${cls}">${text}</p>`;storyArea.appendChild(div);}
+function appendDivider(){const hr=document.createElement('hr');hr.className='divider-line';storyArea.appendChild(hr);}
+function appendTag(tag){const div=document.createElement('div');div.className='scene-tag';div.textContent=tag;storyArea.appendChild(div);}
+function renderScene(sceneId){const scene=SCENES[sceneId];if(!scene)return;state.sceneId=sceneId;for(let i=1;i<=20;i++){if(sceneId.startsWith('ch'+i+'_')){state.chapter=i;chapterLabel.textContent=CHAPTER_TITLES[i-1];break;}}saveState();clearStory();if(scene.tag)appendTag(scene.tag);if(scene.blocks)scene.blocks.forEach(b=>appendBlock(b));if(scene.itemCheck){const ic=scene.itemCheck;if(hasItem(ic.itemId)){itemAlert.classList.add('show');itemAlert.innerHTML=`<div class="item-alert-title">📋 ${ic.prompt}</div><div class="item-alert-desc">${ic.description}</div>`;const useBtn=document.createElement('button');useBtn.className='choice-btn item-use-btn';useBtn.innerHTML='<span class="choice-num">⚡</span>'+ic.useLabel;useBtn.addEventListener('click',()=>{removeItem(ic.itemId);itemAlert.classList.remove('show');itemAlert.innerHTML='';storyArea.innerHTML='';renderScene(ic.useScene);});itemAlert.appendChild(useBtn);const skipBtn=document.createElement('button');skipBtn.className='choice-btn';skipBtn.innerHTML='<span class="choice-num">②</span>'+ic.skipLabel;skipBtn.addEventListener('click',()=>{itemAlert.classList.remove('show');itemAlert.innerHTML='';if(ic.skipScene)renderChoices(ic.skipScene);});itemAlert.appendChild(skipBtn);storyArea.scrollTop=storyArea.scrollHeight;return;}}if(scene.choices)renderChoices(sceneId);}
+function renderChoices(sceneId){const scene=SCENES[sceneId];if(!scene||!scene.choices)return;choicesArea.innerHTML='';const choices=scene.choices;if(choices.length===1&&choices[0].label==='__auto__'){const btn=document.createElement('button');btn.className='choice-btn';btn.textContent='继续 ▸';btn.addEventListener('click',()=>{choicesArea.innerHTML='';const next=choices[0].nextScene;handleOutcome(choices[0]);if(next==='__end__')finishChapter();else renderScene(next);});choicesArea.appendChild(btn);}else{const label=document.createElement('div');label.className='choice-label';label.textContent='做出选择';choicesArea.appendChild(label);choices.forEach((ch,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML=`<span class="choice-num">${i+1}</span>${ch.label}`;btn.addEventListener('click',()=>{state.choices.push({sceneId,choiceIndex:i,season:state.season,chapter:state.chapter});choicesArea.innerHTML='';handleOutcome(ch);const next=ch.nextScene;if(next==='__end__')finishChapter();else renderScene(next);});choicesArea.appendChild(btn);});}storyArea.scrollTop=storyArea.scrollHeight;}
+function handleOutcome(ch){if(ch.consumeItem)removeItem(ch.consumeItem);if(ch.itemGain)addItem(ch.itemGain);if(ch.alsoGain)addItem(ch.alsoGain);}
+function finishChapter(){const ch=state.chapter;state.finished=true;if(ch<20)state.seasonsUnlocked=Math.max(state.seasonsUnlocked,ch+1);if(ch===1){state.chapterRecaps[ch]={summary:'你以047身份入职项目部，前台直言这部门是背锅专用。陈默给了避坑便利贴，王总吐了一个"慎"字。下午小林送来完整数据表，陈默按住鼠标警告你别碰。',keyChoice:state.choices.some(c=>c.sceneId==='ch1_scene6'&&c.choiceIndex===0)?'收下归档留存':'当场退回',itemList:state.inventory.filter(id=>ITEMS[id]&&ITEMS[id].season===1).map(id=>ITEMS[id].name).join('、')};}else{state.chapterRecaps[ch]=buildRecap(ch+1);}saveState();updateBadge();appendDivider();appendTag(`【第${ch}章·结束】`);if(ch<20){appendBlock({type:'thought',text:'本章道具已结算。打开背包查看获得的道具。'});appendBlock({type:'thought',text:'下章预告：'+CHAPTER_TITLES[ch]+'。'});choicesArea.innerHTML=`<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:15px;">第${ch}章完结 🏁<br><button id="btn-next" style="margin-top:14px;padding:10px 24px;background:var(--choice-bg);border:1px solid var(--accent-dim);color:var(--accent);border-radius:8px;cursor:pointer;font-size:14px;">进入下一章</button><br><button id="btn-restart" style="margin-top:8px;padding:8px 20px;background:var(--choice-bg);border:1px solid var(--divider);color:var(--text-dim);border-radius:8px;cursor:pointer;font-size:13px;">重新开始本章</button></div>`;$('btn-next')?.addEventListener('click',()=>{const next=ch+1;state.chapter=next;state.sceneId='ch'+next+'_scene1';state.finished=false;saveState();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[next-1];showRecap(next);});$('btn-restart')?.addEventListener('click',()=>{state.sceneId='ch'+ch+'_scene1';state.finished=false;saveState();updateBadge();clearStory();startChapter(ch);});}else{appendBlock({type:'thought',text:'全季完结。感谢游玩《背锅侠》第一季。'});choicesArea.innerHTML=`<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:15px;">全季完结 🏁<br><span style="font-size:13px;">可通过章节选择器回顾任意章节</span><br><button id="btn-restart" style="margin-top:14px;padding:10px 24px;background:var(--choice-bg);border:1px solid var(--divider);color:var(--text-dim);border-radius:8px;cursor:pointer;font-size:14px;">重新开始第一季</button></div>`;$('btn-restart')?.addEventListener('click',()=>{state.chapter=1;state.sceneId='ch1_scene1';state.inventory=[];state.choices=[];state.finished=false;state.seasonsUnlocked=1;state.chapterRecaps={};saveState();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[0];startChapter(1);});}storyArea.scrollTop=storyArea.scrollHeight;}
+function startChapter(ch){state.chapter=ch;state.sceneId='ch'+ch+'_scene1';state.finished=false;saveState();updateBadge();clearStory();chapterLabel.textContent=CHAPTER_TITLES[ch-1];renderScene('ch'+ch+'_scene1');}
+
+// ==================== SCENES ====================
+const SCENES={
+// ===== 第一章·入职 =====
+ch1_scene1:{tag:'【场景1：前台签到｜早9:00】',blocks:[{type:'narration',text:'你攥着崭新工牌准时入职，此番入局并非为了薪资，而是带着考察目的，专门摸底公司底细。可刚进门，前台瞥见你所属的项目部，瞬间满脸错愕，神色写满难以置信。'},{type:'dialogue',text:'前台诧异开口："项目部？这部门都快被清算裁撤了，公司居然还招新人？说白了就是专门招你进来兜底背锅的！"'}],choices:[{label:'沉默点头，径直进办公区',nextScene:'ch1_branch1a',itemGain:'frontdesk_intel'},{label:'随口接话，反问内情',nextScene:'ch1_branch1b',itemGain:'frontdesk_intel'}]},
+ch1_branch1a:{tag:'【分支·沉默】',blocks:[{type:'narration',text:'你没搭话，转身往里走。身后前台立刻凑到同事耳边碎碎念。'},{type:'dialogue',text:'前台："真的大开眼界，别人入职捡福利，你入职直接认领高危背锅岗位，纯纯公司大冤种专属名额。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge1'}]},
+ch1_branch1b:{tag:'【分支·反问】',blocks:[{type:'dialogue',text:'你："这么不招人待见？"'},{type:'dialogue',text:'前台："正常人看见这部门绕着走，谁来谁倒霉，竞品部躺赢拿资源，我们部门坐等裁员，你是头一个主动往坑里跳的勇士。我可不敢多唠，再说下去我绩效先没了。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge1'}]},
+ch1_merge1:{tag:null,blocks:[{type:'narration',text:'推开玻璃门，项目部氛围死寂，整层工位毫无生气，只剩靠窗两个工位有人在岗。'}],choices:[{label:'__auto__',nextScene:'ch1_scene2'}]},
+ch1_scene2:{tag:'【场景2：工位就位｜早9:10】',blocks:[{type:'narration',text:'李姐把保温杯轻轻落桌，推来一沓考核表，语气疲惫但清醒。'},{type:'dialogue',text:'李姐："047，你的位置。咱们部门在优化名单里，下周跨部门考核，赢了续编，输了全员走人，别掉以轻心。"'},{type:'narration',text:'刘伟瘫在椅子上，一脸认命。'},{type:'dialogue',text:'刘伟："别人入职是升职加薪，你入职是直接上岸裁员决赛圈。"'},{type:'narration',text:'邻座陈默撕了张便利贴，随手"啪"贴在你显示器上，眼神冷漠，满嘴毒舌玩梗。'},{type:'dialogue',text:'陈默："恭喜你喜提新手大礼包，全员等死局。整个项目部都是公司定制背锅工具人，你刚好精准上岗兜底，运气是真的好。"'},{type:'narration',text:'角落张野戴着耳机晃头，余光扫你，淡淡吐出短句。'},{type:'dialogue',text:'张野："自求多福。"'}],choices:[{label:'低头翻看考核细则',nextScene:'ch1_branch2a',itemGain:'exam_loophole'},{label:'转头问陈默有没有避雷方式',nextScene:'ch1_branch2b',itemGain:'chenmo_note'}]},
+ch1_branch2a:{tag:'【分支·看细则】',blocks:[{type:'narration',text:'表格角落备注刺眼：竞品部门优先调取所有原始数据，我方无优先权限。'},{type:'dialogue',text:'刘伟苦笑："人家开局满神装就算了，全程开挂官方还不封号，资源特权直接拉满！我们纯裸装白手起家，赢了无功，输了全锅，这对局根本没法打！"'}],choices:[{label:'__auto__',nextScene:'ch1_merge2'}]},
+ch1_branch2b:{tag:'【分支·问陈默】',blocks:[{type:'dialogue',text:'你："考核有没有稳妥的打法？"'},{type:'dialogue',text:'陈默："稳妥？这破对局官方锁死劣势，越想稳妥死得越快。职场免费捷径？说白了就是专门坑新人的背锅陷阱。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge2'}]},
+ch1_merge2:{tag:null,blocks:[{type:'narration',text:'电脑刚开机，走廊传来沉稳皮鞋声，孙总走在最前，赵东升躬身紧随在后，两人路过项目部门口。'}],choices:[{label:'__auto__',nextScene:'ch1_scene3'}]},
+ch1_scene3:{tag:'【场景3：高层路过｜早9:30】',blocks:[{type:'narration',text:'孙总面色平和，目光扫过室内，隐晦朝赵东升点头示意。'},{type:'dialogue',text:'赵东升倚着门框，一脸标准职业假笑，场面话张口就来："各位同事，下周考核公平竞争，大家凭实力说话，良性比拼。"'},{type:'narration',text:'刘伟瞬间闭嘴，埋头敲键盘装忙，大气不敢出。'},{type:'narration',text:'陈默抬眼瞥向门口，语气懒散轻佻，音量刚好能让赵东升清晰听见，句句话里有话，偏偏挑不出毛病。'},{type:'dialogue',text:'陈默："也是难为赵经理了，明明是特权定制局，还得装成公平匹配赛演给大家看，演技挺敬业。"'},{type:'narration',text:'赵东升脸上笑容瞬间僵死，眼神一沉，不敢接话，只能快步跟上孙总离开。'}],choices:[{label:'原地不动，静静观望',nextScene:'ch1_branch3a'},{label:'起身躲去茶水间',nextScene:'ch1_branch3b',itemGain:'zhoujie_intel'}]},
+ch1_branch3a:{tag:'【分支·静观】',blocks:[{type:'narration',text:'临走前赵东升盯住你，强行圆场。'},{type:'dialogue',text:'赵东升："新同事多交流资源，互相帮助才能共赢。"'},{type:'dialogue',text:'陈默侧头对着你轻笑，小声拆台："别听他鬼话，纯纯打着交流的幌子白嫖成果，拿我们的底稿给他部门刷战绩，算盘响整层楼都听见了。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge3'}]},
+ch1_branch3b:{tag:'【分支·茶水间】',blocks:[{type:'narration',text:'你躲进茶水间，透过玻璃看见孙总低声嘱咐赵东升，姿态全然是上级授意。'},{type:'dialogue',text:'周姐洗着杯子，淡淡吐槽："偏心从来不是巧合，项目部就是用来垫底的。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge3'}]},
+ch1_merge3:{tag:null,blocks:[{type:'narration',text:'一上午连续赶工，关键原始数据全部被竞品部借走扣押，工作直接卡死。'}],choices:[{label:'__auto__',nextScene:'ch1_scene4'}]},
+ch1_scene4:{tag:'【场景4：数据卡死｜午11:40】',blocks:[{type:'narration',text:'刘伟翻遍所有文件柜，一无所获，满脸无奈。'},{type:'dialogue',text:'刘伟："干活的是我们，拿资源的是别人，合着我们纯纯工具人。"'},{type:'dialogue',text:'陈默扫了眼你的空白表格，语气懒散又通透："直接锁我们核心数据，再跟我们比考核成绩，输了还要扣我们失职，这不是比拼，是高层定制的定点淘汰剧本。"'},{type:'dialogue',text:'李姐叹气："我去沟通试试，你们先凑凑现有内容。"'}],choices:[{label:'等李姐沟通结果',nextScene:'ch1_branch4a'},{label:'亲自去竞品部要资料',nextScene:'ch1_branch4b'}]},
+ch1_branch4a:{tag:'【分支·等待】',blocks:[{type:'narration',text:'半小时后李姐空手而归。'},{type:'dialogue',text:'李姐："对方拿高层指令挡我，根本要不回来。"'},{type:'dialogue',text:'刘伟彻底摆烂："行，这下不用比了，直接坐等优化。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge4'}]},
+ch1_branch4b:{tag:'【分支·亲自去】',blocks:[{type:'narration',text:'你去到竞品部门口，赵东升话术滴水不漏。'},{type:'dialogue',text:'赵东升："资料统一管控，新人要懂规矩。"'},{type:'dialogue',text:'陈默跟在你身侧，低声阴阳："规矩都是给底层摆设的，人家上层想卡你就卡你，所谓统筹管控，本质就是明目张胆搞针对。"'}],choices:[{label:'__auto__',nextScene:'ch1_merge4'}]},
+ch1_merge4:{tag:null,blocks:[{type:'narration',text:'午休食堂，人来人往，王总独自坐在角落用餐。'}],choices:[{label:'__auto__',nextScene:'ch1_scene5'}]},
+ch1_scene5:{tag:'【场景5：偶遇王总｜午12:20】',blocks:[{type:'narration',text:'王总瞥见你，抬眼淡淡吐出一字提醒。'},{type:'dialogue',text:'王总："慎。"'}],choices:[{label:'上前问好',nextScene:'ch1_branch5a',itemGain:'wang_hint'},{label:'点头避开',nextScene:'ch1_branch5b',itemGain:'wang_blankchat'}]},
+ch1_branch5a:{tag:'【分支·问好】',blocks:[{type:'narration',text:'你简单问好，王总颔首，目光隐晦扫向远处独自吃饭的孙总，深意十足。'}],choices:[{label:'__auto__',nextScene:'ch1_merge5'}]},
+ch1_branch5b:{tag:'【分支·避开】',blocks:[{type:'narration',text:'你侧身避开，余光看见王总手机页面停留在和陈默的空白对话框，一片寂静。'}],choices:[{label:'__auto__',nextScene:'ch1_merge5'}]},
+ch1_merge5:{tag:null,blocks:[{type:'narration',text:'下午三点，孙总助理小林面无表情走来，将一份完整数据表放在你桌面，转身就走。'}],choices:[{label:'__auto__',nextScene:'ch1_scene6'}]},
+ch1_scene6:{tag:'【场景6：陷阱送达｜下午15:00】',blocks:[{type:'dialogue',text:'刘伟眼睛一亮，瞬间看到希望："这下有救了！缺的数据全补上了！"'},{type:'bold',text:'陈默抬手直接按住你的鼠标，眼神冷冽，语气干脆凌厉，没有半点多余情绪。'},{type:'dialogue',text:'陈默："别碰。天底下没有免费的福利，凭空送上门的完整数据，是高层精心包装的造假黑锅，谁接谁死。"'},{type:'dialogue',text:'张野斜睨一眼，短句冷梗到位："定制死局。"'}],choices:[{label:'收下归档留存',nextScene:'ch1_branch6a',itemGain:'sealed_file',alsoGain:'sun_observation'},{label:'当场退回',nextScene:'ch1_branch6b',itemGain:'returned_data'}]},
+ch1_branch6a:{tag:'【分支·收下封存】',blocks:[{type:'narration',text:'你将表格收好，陈默贴了张便利贴封住文件袋。'},{type:'dialogue',text:'陈默："封死别碰，这是对方递过来的定制死亡剧本。留着是保命底牌，敢动一下，直接当场宣判我们全员违规出局。"'},{type:'narration',text:'远处孙总办公室窗帘微动，视线牢牢锁在你工位。'}],choices:[{label:'__auto__',nextScene:'ch1_chapter_end'}]},
+ch1_branch6b:{tag:'【分支·当场退回】',blocks:[{type:'narration',text:'你直接退回表格，小林回去汇报，赵东升脸上的假笑彻底碎裂。'},{type:'dialogue',text:'陈默："躲过这波保底坑而已，别太乐观。官方裁判下场做局，后续全是暗改阴招，根本不给你合规通关的机会。"'}],choices:[{label:'__auto__',nextScene:'ch1_chapter_end'}]},
+ch1_chapter_end:{tag:'【第一章·结束】',blocks:[{type:'narration',text:'下班前，陈默在你显示器贴了张新便利贴。'},{type:'dialogue',text:'陈默："考核排名只是走个过场的表面流程，项目部的优化清退，早就敲定在高层的内部预案里。所谓考核比拼，不过是他们找合规理由裁人的遮羞布。"'},{type:'thought',text:'你收拾背包，内心冷感独白：我不是来打工的，是来考察这家公司的。这摊浑水，远比表面看着肮脏。层层局中局、明面上的规则博弈、暗地里的人为做局，处处都是藏不住的猫腻，确实有点意思。'},{type:'narration',text:'走廊深处，那件无人认领的工装依旧静静摆放，伏笔持续留存。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+
+// ===== 第二章·文件 =====
+ch2_scene1:{tag:'【开场衔接｜早8:45 工位】',blocks:[{type:'narration',text:'次日一早到岗，隔壁闲置工位椅背上搭着一件无人认领的工装，落了薄薄一层灰，看着格外诡异。'},{type:'narration',text:'李姐抱着一摞厚厚的报表，步履匆匆走到你桌边，语气带着日常的紧绷。'},{type:'dialogue',text:'李姐："今早先把昨天的留存台账整理归档，下午有跨部门对接，所有单据必须签字齐全、留档备查，千万别出岔子。"'}],itemCheck:{itemId:'blank_ledger',prompt:'检测到可用道具：【无数据工作空白台账】',description:'昨日留存的空白台账可以附在报表首页一并留存，佐证竞品部刻意扣押核心工作资源。使用后道具将被消耗。',useLabel:'使用道具——附上空白台账作为证据留存',skipLabel:'暂不使用——先整理其他材料',useScene:'ch2_branch_ledger',skipScene:'ch2_interact1'},choices:[{label:'优先整理昨日留存纸质材料',nextScene:'ch2_branch1a'},{label:'先点开公司OA查看高层通知',nextScene:'ch2_branch1b',itemGain:'oa_screenshot_ch2'}]},
+ch2_branch_ledger:{tag:'【道具使用·附上空白台账】',blocks:[{type:'narration',text:'你翻出昨日的归档单据，顺势将无数据工作空白台账附在报表首页一并留存。这份空白台账清晰记录了昨日竞品部刻意扣押核心工作资源、拖延项目进度的实情。'},{type:'narration',text:'李姐接过报表翻了两页，目光在空白台账上停了片刻，什么都没说，只轻轻点了点头。'},{type:'dialogue',text:'李姐："……留着。以后用得上。"'},{type:'thought',text:'道具消耗：无数据工作空白台账（一次性证据）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch2_merge1'}]},
+ch2_interact1:{tag:null,blocks:[],choices:[{label:'优先整理昨日留存纸质材料',nextScene:'ch2_branch1a'},{label:'先点开公司OA查看高层通知',nextScene:'ch2_branch1b',itemGain:'oa_screenshot_ch2'}]},
+ch2_branch1a:{tag:'【分支·整理纸质材料】',blocks:[{type:'narration',text:'你翻出昨日的归档单据，顺势将无数据工作空白台账附在报表首页一并留存，刚好能佐证昨日竞品部刻意扣押核心工作资源、拖延项目进度的实情。'},{type:'thought',text:'道具消耗：无数据工作空白台账（一次性证据）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch2_merge1'}]},
+ch2_branch1b:{tag:'【分支·查看OA通知】',blocks:[{type:'narration',text:'公司OA首页置顶了孙总刚签发的考核补充条例，文件抄送记录里，清晰留有王总的审阅痕迹，明显是高层提前敲定的新规。'},{type:'thought',text:'获得道具：孙总考核补充OA截图（一次性线索）'}],choices:[{label:'__auto__',nextScene:'ch2_merge1'}]},
+ch2_merge1:{tag:'【段落衔接｜早9:20 走廊】',blocks:[{type:'narration',text:'走廊人来人往，竞品部的赵东升忽然凑到你工位前，脸上挂着标准的职场假笑。借着高层下发的跨部门协同核查任务的由头，他堂而皇之地甩来烂活。'},{type:'dialogue',text:'赵东升："小老弟，帮个小忙呗。我们部门今天全员外勤跑项目，办公室没人留守，这边刚好有份高层加急的项目汇总文件，麻烦你跑一趟档案室取一下送我办公室。新人多帮忙分担工作，也算积极表现，对你后续考核有好处。"'},{type:'narration',text:'他刚走，路过的刘伟立刻凑过来，小声吐槽。'},{type:'dialogue',text:'刘伟："别被他忽悠了！这人最会借公事甩锅，好活自己抢，烂活全甩给咱们项目部新人，干成是他的功绩，出事就是我们背锅，纯纯职场老油条。"'}],choices:[{label:'当场答应，立刻动身取文件',nextScene:'ch2_branch2a'},{label:'借口手头报表未完成，委婉推脱',nextScene:'ch2_branch2b'}]},
+ch2_branch2a:{tag:'【分支·应下取文件】',blocks:[{type:'narration',text:'你没多想，点头应下，起身准备去往档案室，一旁的陈默当即抬眼开口阻拦，语气清淡却句句通透。'},{type:'dialogue',text:'陈默："别接。涉密文件，外部门碰就是违规。他这是故意甩锅，等着你踩坑背雷。"'}],choices:[{label:'__auto__',nextScene:'ch2_merge2'}]},
+ch2_branch2b:{tag:'【分支·委婉推脱】',blocks:[{type:'narration',text:'你以手头台账、报表尚未整理归档，本职工作未完工为由委婉推脱。赵东升脸上的笑意瞬间收敛，面色沉了几分，没再多纠缠，只撂下一句"等你忙完再说"，转身离开。'},{type:'dialogue',text:'陈默瞥着他的背影，淡淡出声，语气带着几分通透的调侃："你今天软了，他明天就敢明目张胆拿捏你。职场退让，就是给别人递刀。"'},{type:'narration',text:'你顺利推脱掉甩锅任务后，手头本职工作收尾完毕，恰逢李姐安排你前往档案室隔壁的文印室领取资料。途经档案室走廊时，你远远瞥见靠墙摸鱼的张野，和选择取文件的分支抵达同一区域，双线剧情顺利汇合。'}],choices:[{label:'__auto__',nextScene:'ch2_scene3'}]},
+ch2_merge2:{tag:null,blocks:[{type:'narration',text:'陈默的警告言犹在耳，但你已经应下了赵东升。犹豫片刻，你还是走向了档案室——小心一点就是了。'}],choices:[{label:'__auto__',nextScene:'ch2_scene3'}]},
+ch2_scene3:{tag:'【段落衔接｜早10:00 档案室门口】',blocks:[{type:'narration',text:'你走到档案室门口，撞见摸鱼靠墙的张野。他扫了一眼你手里的取件申请，一眼看穿端倪。'},{type:'dialogue',text:'张野："有坑。"'}],choices:[{label:'直接开门取出文件',nextScene:'ch2_branch3a',itemGain:'tampered_cover'},{label:'站在门外先翻看文件外包装标签',nextScene:'ch2_branch3b',itemGain:'security_label_photo'}]},
+ch2_branch3a:{tag:'【分支·直接取件】',blocks:[{type:'narration',text:'你推门进入档案室，取出对应的项目文件抱在怀里，细心发现文件封皮边角有刻意涂改、重新粘贴的痕迹，看着格外不对劲。'},{type:'thought',text:'获得道具：涂改封皮项目文件（一次性物证）'}],choices:[{label:'__auto__',nextScene:'ch2_merge4'}]},
+ch2_branch3b:{tag:'【分支·核查标签】',blocks:[{type:'narration',text:'你没有贸然开门，先凑近文件外包装仔细核查，侧边的保密等级标签清晰标注：仅限竞品部内部人员查阅、外部人员禁止调阅。'},{type:'thought',text:'获得道具：文件保密等级标签照片（一次性线索）'}],choices:[{label:'__auto__',nextScene:'ch2_merge4'}]},
+ch2_merge4:{tag:'【段落衔接｜午11:00 茶水间】',blocks:[{type:'narration',text:'午休摸鱼时段，茶水间偶遇刘伟和周姐，几人随口闲聊，爆出不少公司内幕。'},{type:'dialogue',text:'刘伟："今早孙总单独找了赵东升谈话，谈了四十分钟。一个副总跟一个部门经理，有什么话能聊四十分钟？估计又在琢磨怎么针对我们项目部新人。"'},{type:'dialogue',text:'周姐淡淡提醒："职场不公是常态，多留凭证，少裸奔干活。"'},{type:'narration',text:'话音落下，王总神色严肃快步路过，刻意避开了这边的闲聊。'}],choices:[{label:'主动上前和周姐搭话深挖内情',nextScene:'ch2_branch4a',itemGain:'zhoujie_hr_intel'},{label:'安静旁听，默默记录对话内容',nextScene:'ch2_branch4b',itemGain:'tearoom_recording'}]},
+ch2_branch4a:{tag:'【分支·主动搭话】',blocks:[{type:'narration',text:'你顺势上前搭话，借着闲聊打探高层派系动向，周姐没有隐瞒，悄悄透露了孙总近期正在筹备内部人事调整的消息。'},{type:'thought',text:'获得道具：周姐口述人事调整情报（一次性线索）'}],choices:[{label:'__auto__',nextScene:'ch2_merge5'}]},
+ch2_branch4b:{tag:'【分支·静默记录】',blocks:[{type:'narration',text:'你没有插话，默默拿出手机开启录音，完整留存下刘伟和周姐的全部闲聊内容，留存关键线索。'},{type:'thought',text:'获得道具：茶水间闲谈录音（一次性物证）'}],choices:[{label:'__auto__',nextScene:'ch2_merge5'}]},
+ch2_merge5:{tag:'【段落衔接｜午14:00 工位】',blocks:[{type:'narration',text:'下午刚开工，赵东升再度找来，态度强硬，借高层协同任务为由，逼你当场拆文件核对复述。'},{type:'dialogue',text:'陈默："哟，赵经理对新人也太关照了。不过这份是部门涉密归档文件，公司合规条例明文禁止跨部门人员拆阅经手，您这逼着新人违规的操作，是打算带着新人跟您一块同归于尽、一起担责吗？"'}],itemCheck:{itemId:'sealed_file',prompt:'检测到可用道具：【陈默封存的造假数据文件袋】',description:'第一章留下的底牌。此时亮出来可以震慑赵东升。但道具将被消耗。',useLabel:'使用道具——亮出封存文件，震慑赵东升',skipLabel:'暂不使用——先靠自己应对',useScene:'ch2_branch_item',skipScene:'ch2_interact5'},choices:[{label:'听从要求拆开文件核对',nextScene:'ch2_branch5a',itemGain:'negative_photo'},{label:'坚持不拆封，完整转交不查看内页',nextScene:'ch2_branch5b',itemGain:'monitor_record'}]},
+ch2_branch_item:{tag:'【道具使用·亮出封存文件】',blocks:[{type:'narration',text:'你不急不慢地从抽屉里取出那份贴着便利贴的文件袋，轻轻放在桌上。赵东升的表情变了。'},{type:'dialogue',text:'陈默嘴角微扬："赵经理，这份文件袋里装的是什么，您应该比我们清楚。"'},{type:'narration',text:'赵东升沉默片刻，笑容重新堆上脸，但这次笑得极其勉强："……行。既然你们手头还有工作，文件的事改天再说。"'},{type:'narration',text:'他转身走了。步子比来时快得多。'}],choices:[{label:'__auto__',nextScene:'ch2_merge6'}]},
+ch2_interact5:{tag:null,blocks:[],choices:[{label:'听从要求拆开文件核对',nextScene:'ch2_branch5a',itemGain:'negative_photo'},{label:'坚持不拆封，完整转交不查看内页',nextScene:'ch2_branch5b',itemGain:'monitor_record'}]},
+ch2_branch5a:{tag:'【分支·拆开文件】',blocks:[{type:'narration',text:'你迫于压力拆开文件封装，翻开后发现内页混杂着大量虚假营收数据，还没等你反应过来，一旁的赵东升迅速拿出手机抓拍，刻意留存对你不利的画面。'},{type:'thought',text:'触发负面伏笔：赵东升持有翻阅违规文件照片——这张照片将在后续章节中持续发酵。'}],choices:[{label:'__auto__',nextScene:'ch2_merge6'}]},
+ch2_branch5b:{tag:'【分支·拒不拆封】',blocks:[{type:'narration',text:'你谨记保密规定，全程不触碰文件内页，在工位监控的可视范围内，将完整未拆封的文件双手递交，全程留痕、规避所有风险。'},{type:'thought',text:'获得道具：完整转交文件监控时间记录（一次性证据）'}],choices:[{label:'__auto__',nextScene:'ch2_merge6'}]},
+ch2_merge6:{tag:'【段落衔接｜下午15:30 会议室门外】',blocks:[{type:'narration',text:'公司临时下发部门短会通知，OA同步推送了孙总最新的考核加码条款，新规针对性极强。王总审阅后，在文件批注栏留下四字评语：审慎核查。'},{type:'narration',text:'张野路过你的工位，扫了眼OA通知，淡淡丢下一句短句。'},{type:'dialogue',text:'张野："全是套路。"'}],choices:[{label:'截图保存王总批注与孙总加码通知',nextScene:'ch2_branch6a',itemGain:'oa_approval_screenshot'},{label:'简单浏览，不做任何留存操作',nextScene:'ch2_branch6b'}]},
+ch2_branch6a:{tag:'【分支·截图留存】',blocks:[{type:'narration',text:'你立刻截图保存高层OA通知与批注内容，妥善留存这份高层博弈的关键线索。'},{type:'thought',text:'获得道具：高层OA批注截图（一次性线索）'}],choices:[{label:'__auto__',nextScene:'ch2_merge7'}]},
+ch2_branch6b:{tag:'【分支·不做留存】',blocks:[{type:'narration',text:'你简单浏览完新规内容，没有进行任何截图留存，直接关闭了页面，无新增道具。'}],choices:[{label:'__auto__',nextScene:'ch2_merge7'}]},
+ch2_merge7:{tag:'【段落衔接｜下班前17:40 工位】',blocks:[{type:'narration',text:'临近下班，陈默贴来一张便利贴，低声提醒暗藏危机。'},{type:'dialogue',text:'陈默："今天这点小动作只是最低级的新手试水，新规则实装后，所有机制都会变成针对你的定点debuff。台前蹦跶的只是前排小怪，真正控场的幕后玩家，至今还没现身。"'},{type:'narration',text:'暮色笼罩工位，隔壁空工位那件无人认领的工装静静摆放着，在灯光下透着诡异。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+
+// ===== 第三章·短会 =====
+ch3_scene1:{tag:'【开场衔接｜早8:50 工位】',blocks:[{type:'narration',text:'入职第三日，考核前最后一个完整工作日，办公室氛围紧绷。一早到岗，OA弹出全员紧急通知。'},{type:'bold',text:'【全员临时短会｜十分钟到场，无请假】'},{type:'dialogue',text:'刘伟："一大早就突击拉满KPI强度，不用想，今天铁定要背阶段性大锅。"'},{type:'dialogue',text:'张野："风向变了，要洗牌。"'},{type:'dialogue',text:'陈默："昨天俩人关着门聊了四十分钟，今天就火速开会改规则。说白了，上面早就串通好了，今天就是专门来拿捏新人的。"'}],choices:[{label:'顺手帮李姐整理好桌上散落的会议资料',nextScene:'ch3_branch1a'},{label:'趁会前空档，给一直熬夜加班的陈默带一杯热饮',nextScene:'ch3_branch1b'}]},
+ch3_branch1a:{tag:'【分支·帮李姐】',blocks:[{type:'narration',text:'你顺手帮李姐整理好散落的会议资料。李姐点头道谢，压低声音提了一句。'},{type:'dialogue',text:'李姐："今天会上别主动输出、别接话茬，现在公司风向诡异，很容易被抓典型背锅。"'}],choices:[{label:'__auto__',nextScene:'ch3_merge1'}]},
+ch3_branch1b:{tag:'【分支·给陈默带热饮】',blocks:[{type:'narration',text:'你趁会前空档给陈默带了杯热饮。她接过去，看了一眼，嘴角微动。'},{type:'dialogue',text:'陈默："哟，反应挺快。这是提前嗅到风声、知道今天要挨针对，特意来我这攒点保命buff？"'}],choices:[{label:'__auto__',nextScene:'ch3_merge1'}]},
+ch3_merge1:{tag:'【汇合·全员短会】',blocks:[{type:'narration',text:'全员到场，孙总首次正面亮相。孙总当众宣布，本次新人考核评审启用公司轮岗评委池，取消部门自评权限。投屏公示新评委名单——三名评委均为孙总直属、竞品部门人员，仅周姐保留原有评审席位。'},{type:'dialogue',text:'孙总："规则公开透明，结果以评审数据为准，请各位新人认真对待考核。"'},{type:'narration',text:'十分钟短会结束。散会时，孙总路过你的工位，看了一眼桌角便利贴，淡淡一笑，随即离开。走廊转角，王总与你擦肩而过，低声提醒。'},{type:'dialogue',text:'王总："评委全换血，物料全部留底，周姐是你唯一的突破口。"'},{type:'narration',text:'你返回工位，OA同步更新公示，你截图保存。'},{type:'thought',text:'获得道具：评委组调整OA公示截图（主线核心凭证）'}],choices:[{label:'__auto__',nextScene:'ch3_scene2'}]},
+ch3_scene2:{tag:'【互动2·评分争议触发】',blocks:[{type:'narration',text:'会议结束半小时，赵东升走到工位过道，当众对你作出评价。'},{type:'dialogue',text:'赵东升："入职三天适配度不足、协同配合被动，工作主观能动性欠缺。考核窗口期在即，这种工作状态，很难通过评审闭环。"'},{type:'narration',text:'不等你开口，隔壁工位的陈默停下工作，侧身接话。'},{type:'dialogue',text:'陈默："这话就有点双标了吧。新人全程守规矩避红线，半点错没出。反倒是有人三番五次塞涉密跨部门的活儿过来，摆明了是挖坑。老老实实避险被挑态度问题，那故意给新人递雷，算什么？"'},{type:'narration',text:'你出声道谢。'},{type:'dialogue',text:'陈默："别脑补人情戏。你掉链子被优化，手上的烂摊子全要我们接，纯属全员承压。"'}],choices:[{label:'__auto__',nextScene:'ch3_scene3'}]},
+ch3_scene3:{tag:'【互动3·午休施压分支】',blocks:[{type:'narration',text:'午休前，赵东升单独找到你。'}],itemCheck:{itemId:'negative_photo',prompt:'检测到负面伏笔：【赵东升持有翻阅违规文件照片】',description:'赵东升拿出留存的抓拍照片，以此威胁你乖乖听话。',useLabel:'面对威胁——见招拆招',skipLabel:'继续',useScene:'ch3_threat_photo',skipScene:'ch3_threat_none'},choices:[{label:'__auto__',nextScene:'ch3_threat_none'}]},
+ch3_threat_photo:{tag:'【分支·有违规伏笔】',blocks:[{type:'narration',text:'赵东升拿出留存的抓拍照片，低声威胁。'},{type:'dialogue',text:'赵东升："你私自翻阅涉密文件的记录我已经留档了。新评委组都是自己人，想给你打差评、判不合格，就是一句话的事。想安稳转正，后面乖乖听话、配合工作。"'}],choices:[{label:'__auto__',nextScene:'ch3_scene4'}]},
+ch3_threat_none:{tag:'【分支·无违规伏笔】',blocks:[{type:'narration',text:'赵东升拿最新考核标准施压，刻意刁难。'},{type:'dialogue',text:'赵东升："现在评审规则彻底倾斜，你们部门没人能替你背书。后续考核细则我主导把控，不想提前出局，就别搞个人主义、服从安排。"'}],choices:[{label:'__auto__',nextScene:'ch3_scene4'}]},
+ch3_scene4:{tag:'【互动4·道具消耗自证】',blocks:[{type:'narration',text:'面对赵东升的威胁，你可以消耗第二章留存道具自证清白、化解危机。'}],itemCheck:{itemId:'monitor_record',prompt:'检测到可用道具：【完整转交文件监控时间记录】',description:'证明全程合规移交，无私自翻阅行为。使用后道具将被消耗。',useLabel:'① 出示监控时间记录——证明全程合规移交',skipLabel:'暂不使用——看其他选项',useScene:'ch3_use_monitor',skipScene:'ch3_choice2'},choices:[{label:'出示监控时间记录，证明全程合规',nextScene:'ch3_use_monitor',consumeItem:'monitor_record'},{label:'出示保密标签照片，证明对方设坑',nextScene:'ch3_use_label',consumeItem:'security_label_photo'},{label:'出示涂改封皮文件，反向举证甩锅',nextScene:'ch3_use_cover',consumeItem:'tampered_cover'},{label:'暂不消耗道具，隐忍观望，留存后手',nextScene:'ch3_hold'}]},
+ch3_choice2:{tag:null,blocks:[],itemCheck:{itemId:'security_label_photo',prompt:'检测到可用道具：【文件保密等级标签照片】',description:'证明文件本身禁止新人经手，对方刻意设坑。使用后道具将被消耗。',useLabel:'② 出示保密标签照片——证明文件禁止新人经手',skipLabel:'暂不使用——看其他选项',useScene:'ch3_use_label',skipScene:'ch3_choice3'},choices:[{label:'出示保密标签照片，证明对方设坑',nextScene:'ch3_use_label',consumeItem:'security_label_photo'},{label:'出示涂改封皮文件，反向举证甩锅',nextScene:'ch3_use_cover',consumeItem:'tampered_cover'},{label:'暂不消耗道具，隐忍观望',nextScene:'ch3_hold'}]},
+ch3_choice3:{tag:null,blocks:[],itemCheck:{itemId:'tampered_cover',prompt:'检测到可用道具：【涂改封皮项目文件】',description:'反向举证对方刻意提供问题文件，恶意甩锅。使用后道具将被消耗。',useLabel:'③ 出示涂改封皮——反向举证对方恶意甩锅',skipLabel:'暂不使用——隐忍留存',useScene:'ch3_use_cover',skipScene:'ch3_hold'},choices:[{label:'出示涂改封皮文件，反向举证甩锅',nextScene:'ch3_use_cover',consumeItem:'tampered_cover'},{label:'暂不消耗道具，隐忍观望',nextScene:'ch3_hold'}]},
+ch3_use_monitor:{tag:'【道具使用·出示监控记录】',blocks:[{type:'narration',text:'你将完整转交文件监控时间记录摊在桌上。时间、地点、监控画面一应俱全。赵东升脸色变了。'},{type:'dialogue',text:'赵东升沉默片刻，收起照片，语气软了几分："……行，看来你做事确实谨慎。今天的事，当我没提。"'},{type:'thought',text:'道具消耗：完整转交文件监控时间记录（一次性证据）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch3_scene5'}]},
+ch3_use_label:{tag:'【道具使用·出示保密标签】',blocks:[{type:'narration',text:'你亮出文件保密等级标签照片。你反问赵东升：一份标注着竞品部内部专用的涉密文件，为什么会被安排给项目部新人去取？赵东升哑口无言。'},{type:'dialogue',text:'赵东升："……文件的事是工作疏忽，改天再说。"'},{type:'narration',text:'他转身就走。陈默在隔壁工位轻轻鼓了两下掌。'},{type:'thought',text:'道具消耗：文件保密等级标签照片（一次性线索）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch3_scene5'}]},
+ch3_use_cover:{tag:'【道具使用·出示涂改封皮】',blocks:[{type:'narration',text:'你将涂改封皮项目文件放在桌上，封皮边角涂改、重新粘贴的痕迹清晰可见。赵东升脸色铁青，一把抓起那份文件，转身快步离开了工位区。'},{type:'thought',text:'道具消耗：涂改封皮项目文件（一次性物证）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch3_scene5'}]},
+ch3_hold:{tag:'【分支·隐忍留存】',blocks:[{type:'narration',text:'你选择暂不亮出底牌，保持沉默。赵东升见你没有反击，以为拿捏住了你，冷笑一声离开。但你知道——手里的证据还在，底牌留着，总有翻盘的时候。'},{type:'thought',text:'道具未消耗，全部留存。'}],choices:[{label:'__auto__',nextScene:'ch3_scene5'}]},
+ch3_scene5:{tag:'【互动5·食堂同行选择】',blocks:[{type:'narration',text:'午休时间，食堂人来人往。'}],choices:[{label:'和刘伟同桌吃饭，听他吐槽公司内部八卦',nextScene:'ch3_branch5a',itemGain:'liuwei_gossip'},{label:'和张野同桌摸鱼，安静摆烂放松心态',nextScene:'ch3_branch5b'},{label:'独自打包带回工位，顺便给未吃饭的陈默带餐',nextScene:'ch3_branch5c'}]},
+ch3_branch5a:{tag:'【分支·刘伟同桌】',blocks:[{type:'dialogue',text:'刘伟："你知道赵东升上周请孙总吃饭吗？就在楼下湘菜馆，两个人点了六个菜，吃到九点多。吃完饭没几天，评委组就全换成了孙总的人。你说巧不巧？"'},{type:'thought',text:'获得道具：刘伟内部闲谈情报（日常支线道具）'}],choices:[{label:'__auto__',nextScene:'ch3_scene6'}]},
+ch3_branch5b:{tag:'【分支·张野同桌】',blocks:[{type:'narration',text:'张野耳机里全程播放纯轻音乐，你坐在他对面，两人默契地保持安静。他抬眼看了你一下，没说话，把桌上那碟小菜往你这边推了半寸。'}],choices:[{label:'__auto__',nextScene:'ch3_scene6'}]},
+ch3_branch5c:{tag:'【分支·给陈默带餐】',blocks:[{type:'narration',text:'你独自打包带回工位，顺便多带了一份给陈默。她收到餐后愣了一下。'},{type:'dialogue',text:'陈默："临时补后手是吧。也行，今天这局面，多一层缓冲总没错。"'},{type:'narration',text:'陈默对你的好感大幅提升。'}],choices:[{label:'__auto__',nextScene:'ch3_scene6'}]},
+ch3_scene6:{tag:'【互动6·下班前日常轻互动】',blocks:[{type:'narration',text:'临近下班，办公室节奏放缓。'}],choices:[{label:'同事借充电线，顺手帮忙',nextScene:'ch3_branch6a'},{label:'帮李姐整理归档今日会议资料',nextScene:'ch3_branch6b',itemGain:'lijie_checklist'},{label:'跟着张野摸鱼划水，短暂摆烂放松',nextScene:'ch3_branch6c'}]},
+ch3_branch6a:{tag:'【分支·顺手帮忙】',blocks:[{type:'narration',text:'同事借充电线，你顺手递过去。小事一桩，但积少成多——全员微好感累积。'}],choices:[{label:'__auto__',nextScene:'ch3_merge_end'}]},
+ch3_branch6b:{tag:'【分支·帮李姐归档】',blocks:[{type:'narration',text:'你帮李姐整理归档今日会议资料。她翻了几页，从抽屉里拿出一份打印好的清单递给你。'},{type:'dialogue',text:'李姐："就是些实战总结的排坑经验，不违规、不站队，你自己参考着规避风险。"'},{type:'thought',text:'获得道具：李姐的评分应对清单（日常支线道具）'}],choices:[{label:'__auto__',nextScene:'ch3_merge_end'}]},
+ch3_branch6c:{tag:'【分支·跟张野摸鱼】',blocks:[{type:'narration',text:'你跟着张野摸鱼划水，两人默契保持安静，谁也没说话。短暂的放空让紧绷的神经松了半寸。'}],choices:[{label:'__auto__',nextScene:'ch3_merge_end'}]},
+ch3_merge_end:{tag:'【场景·下班前】',blocks:[{type:'narration',text:'临近下班，陈默撕下一张便利贴，贴在你的显示器侧边。'},{type:'dialogue',text:'陈默："今天评委会全员换血只是新手村教学关。赵东升手里捏着你那张照片还没往外掏，不是发善心，是留着当定时炸弹等关键时刻引爆。接下来考核别再给他送素材，你那几个保命道具别乱交，留到大boss登场再开。"'},{type:'narration',text:'走廊深处，那件无人认领的工装依旧静静摆放，伏笔持续留存。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+
+// ===== 第四章·首轮考核 =====
+ch4_scene1:{tag:'【开场衔接｜早8:50 工位】',blocks:[{type:'narration',text:'入职第四天，公司首轮新人转正考核正式启动，项目部本次仅有你一名新人参与评级。一早工位坐定，部门早会准时召开，公示本次考核最终评分细则与权重占比。'},{type:'dialogue',text:'刘伟："这规矩看着面面俱到，其实贼坑！明摆着挑软柿子捏，专门逮着不好做的地方卡人。"'},{type:'dialogue',text:'张野："规矩双标。"'},{type:'dialogue',text:'陈默："表面标准统一，背地里调整评判阈值，说白了就是人为制造偏差，定向压低我们的分数。"'}],choices:[{label:'顺手帮李姐整理考核台账模板',nextScene:'ch4_branch1a'},{label:'帮刘伟核对一遍基础数据，规避低级失误',nextScene:'ch4_branch1b'}]},
+ch4_branch1a:{tag:'【分支·帮李姐】',blocks:[{type:'narration',text:'你顺手帮李姐整理考核台账模板。她点头致意，没多说话——但这份默契，她记下了。'}],choices:[{label:'__auto__',nextScene:'ch4_merge1'}]},
+ch4_branch1b:{tag:'【分支·帮刘伟】',blocks:[{type:'narration',text:'你帮刘伟逐格核对基础数据，揪出两个公式引用错位。刘伟松了口气："还好你看了一眼，不然这锅又是我背。"'}],choices:[{label:'__auto__',nextScene:'ch4_merge1'}]},
+ch4_merge1:{tag:'【段落衔接·评分公示】',blocks:[{type:'narration',text:'早会结束，OA准时推送本轮新人考核评分结果。公示页面清晰显示：评委打分完毕，流程终审节点标注——【已审核：孙】。孙总全程未露面，存在感却贯穿整场考核。'},{type:'narration',text:'单项「跨部门协同效率」评分栏，落差极其刺眼。'},{type:'dialogue',text:'赵东升打分：58分，评语——"从后台数据来看，项目部本次参评新人跨部门响应效率偏低，主观配合积极性不足。"'},{type:'dialogue',text:'周姐打分：72分，评语——"系统流程节点齐全，无违规延误记录，按平台标准判定合格。"'},{type:'narration',text:'一严一稳，一主观一规章，两个分数直接撕开本次评分的刻意性。'}],choices:[{label:'__auto__',nextScene:'ch4_scene2'}]},
+ch4_scene2:{tag:'【互动2·评分争议触发】',blocks:[{type:'narration',text:'工位区氛围瞬间紧绷，赵东升的针对性打分直指你此前拒绝违规甩锅文件的行为。'}],choices:[{label:'沉默观望，留存证据不主动出头',nextScene:'ch4_branch2a'},{label:'适度开口，询问评分数据口径差异',nextScene:'ch4_branch2b'}]},
+ch4_branch2a:{tag:'【分支·沉默观望】',blocks:[{type:'narration',text:'你没有出声，静静截图留存两份评分差异记录。赵东升见你沉默，默认你无力反驳，神态更坦然，顺势准备结束本次评分公示。'}],choices:[{label:'__auto__',nextScene:'ch4_merge2'}]},
+ch4_branch2b:{tag:'【分支·适度开口】',blocks:[{type:'narration',text:'你当众轻声提问："同一项协同效率，两位评委的判定依据不一样，请问本轮考核，最终以哪一套标准为准？"这句提问不激进、不抬杠，却精准卡住规则漏洞。赵东升脸色微僵，一时无法圆场。'}],choices:[{label:'__auto__',nextScene:'ch4_merge2'}]},
+ch4_merge2:{tag:'【汇合·陈默拆台】',blocks:[{type:'narration',text:'不等局面继续僵持，陈默率先起身，公开对评分口径提出质疑。'},{type:'dialogue',text:'陈默："扣分依据是人工填报时间，和系统存档记录对不上。靠手动改数据扣分，本身就站不住脚。"'},{type:'dialogue',text:'赵东升依旧维持体面姿态："本次评分规则全员通用，后台数据公开透明，不存在定向针对。"'}],choices:[{label:'__auto__',nextScene:'ch4_scene3'}]},
+ch4_scene3:{tag:'【互动3·道具消耗对峙】',blocks:[{type:'narration',text:'面对不公评分与官方搪塞，你可消耗往期道具，强化己方立场、坐实针对性打分。'}],itemCheck:{itemId:'monitor_record',prompt:'检测到可用道具：【完整转交文件监控时间记录】',description:'证明全程合规履职，无配合滞后问题。使用后道具将被消耗。',useLabel:'① 出示监控记录——证明全程合规履职',skipLabel:'暂不使用——看其他选项',useScene:'ch4_use_monitor',skipScene:'ch4_choice2'},choices:[{label:'出示监控记录，证明全程合规',nextScene:'ch4_use_monitor',consumeItem:'monitor_record'},{label:'出示评委组OA截图，佐证评委不中立',nextScene:'ch4_use_judge',consumeItem:'oa_judge_panel'},{label:'播放会议重点录音，形成行为反差',nextScene:'ch4_use_recording',consumeItem:'meeting_recording'},{label:'暂不消耗道具，隐忍留存后手',nextScene:'ch4_hold'}]},
+ch4_choice2:{tag:null,blocks:[],itemCheck:{itemId:'oa_judge_panel',prompt:'检测到可用道具：【评委组调整OA公示截图】',description:'佐证评委构成不中立。使用后道具将被消耗。',useLabel:'② 出示评委组截图——佐证评委构成不中立',skipLabel:'暂不使用——看其他选项',useScene:'ch4_use_judge',skipScene:'ch4_choice3'},choices:[{label:'出示评委组OA截图，佐证评委不中立',nextScene:'ch4_use_judge',consumeItem:'oa_judge_panel'},{label:'播放会议重点录音，形成行为反差',nextScene:'ch4_use_recording',consumeItem:'meeting_recording'},{label:'暂不消耗道具，隐忍留存后手',nextScene:'ch4_hold'}]},
+ch4_choice3:{tag:null,blocks:[],itemCheck:{itemId:'meeting_recording',prompt:'检测到可用道具：【会议重点录音】',description:'对比赵东升此前"公平公正各凭本事"的公开言论，形成行为反差。',useLabel:'③ 播放会议录音——对比公开言论形成反差',skipLabel:'暂不使用——隐忍留存',useScene:'ch4_use_recording',skipScene:'ch4_hold'},choices:[{label:'播放会议重点录音，形成行为反差',nextScene:'ch4_use_recording',consumeItem:'meeting_recording'},{label:'暂不消耗道具，隐忍留存后手',nextScene:'ch4_hold'}]},
+ch4_use_monitor:{tag:'【道具使用·出示监控记录】',blocks:[{type:'narration',text:'你将完整转交文件监控时间记录投屏展示。时间轴清晰标注：你在工位监控可视范围内全程未触碰文件内页。'},{type:'dialogue',text:'陈默顺势接话："后台数据不是公开透明吗？这份监控记录正好说明——新人的协同效率没有任何滞后，扣分依据站不住脚。"'},{type:'dialogue',text:'赵东升沉默半晌，语气明显收敛："……本次评分以系统数据为准，如有异议，后续可以走申诉流程。"'},{type:'thought',text:'道具消耗：完整转交文件监控时间记录（一次性证据）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch4_merge3'}]},
+ch4_use_judge:{tag:'【道具使用·出示评委组截图】',blocks:[{type:'narration',text:'你亮出评委组调整OA公示截图——三名评委均为孙总直属竞品部门人员，仅周姐保留原有评审席位。'},{type:'dialogue',text:'周姐看着截图，淡淡补了一句："评委名单确实是临时调整过的。这个流程我建议完整留档。"'},{type:'narration',text:'赵东升的笑容彻底挂不住了。'},{type:'thought',text:'道具消耗：评委组调整OA公示截图（一次性线索）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch4_merge3'}]},
+ch4_use_recording:{tag:'【道具使用·播放会议录音】',blocks:[{type:'narration',text:'你将会议重点录音公开播放。孙总那句"规则公开透明，结果以评审数据为准"回荡在工位区。一边是公开承诺的公平竞争，一边是58分与72分的巨大落差。赵东升一言不发，脸色铁青。'},{type:'thought',text:'道具消耗：会议重点录音（一次性证据）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch4_merge3'}]},
+ch4_hold:{tag:'【分支·隐忍留存】',blocks:[{type:'narration',text:'你选择暂不亮出底牌。赵东升见你没有当场反击，以为这次评分争议就此揭过。但你知道——手里的证据还在，底牌留着，总有翻盘的时候。'}],choices:[{label:'__auto__',nextScene:'ch4_merge3'}]},
+ch4_merge3:{tag:'【段落衔接·王总批注】',blocks:[{type:'narration',text:'评分争议发酵后，OA流程后台同步更新一条批注。'},{type:'bold',text:'【流程批注：请评委会完整留存原始评分依据、填报记录、系统节点日志，全程备查。】'},{type:'narration',text:'这是王总无声的动作，不站队、不表态，只强行锁死留底通道。'},{type:'thought',text:'获得道具：王总流程批注备查记录（高层伏笔道具）'}],choices:[{label:'__auto__',nextScene:'ch4_scene4'}]},
+ch4_scene4:{tag:'【互动4·午休日常抉择】',blocks:[{type:'narration',text:'午休前夕，办公室氛围稍缓。'}],choices:[{label:'和刘伟食堂拼桌，听他吐槽考核细则',nextScene:'ch4_branch4a'},{label:'偶遇李姐，接收她私下整理的评分应对清单',nextScene:'ch4_branch4b',itemGain:'lijie_checklist'},{label:'给全程伏案工作的陈默顺带带一份午餐',nextScene:'ch4_branch4c'}]},
+ch4_branch4a:{tag:'【分支·刘伟拼桌】',blocks:[{type:'dialogue',text:'刘伟一边干饭一边小声坦言："我胆子小不敢硬刚，但我对数据敏感，后续的考核报表我帮你逐行核验，杜绝疏漏误判。"'}],choices:[{label:'__auto__',nextScene:'ch4_scene5'}]},
+ch4_branch4b:{tag:'【分支·偶遇李姐】',blocks:[{type:'dialogue',text:'李姐悄悄将文档发给你，语气平和稳妥："就是些实战总结的排坑经验，不违规、不站队。别外传——传出去李姐就不是李姐了，是李叛徒。"'},{type:'thought',text:'获得道具：李姐的评分应对清单'}],choices:[{label:'__auto__',nextScene:'ch4_scene5'}]},
+ch4_branch4c:{tag:'【分支·给陈默带餐】',blocks:[{type:'dialogue',text:'陈默抬眼瞥了一眼餐食，随口一句轻调侃，默默收下："临时补后手是吧。也行，今天这局面，多一层缓冲总没错。"'}],choices:[{label:'__auto__',nextScene:'ch4_scene5'}]},
+ch4_scene5:{tag:'【互动5·下午茶轻互动】',blocks:[{type:'narration',text:'午后的办公室节奏放缓。'}],choices:[{label:'帮同事顺带带下午茶，积累全员微好感',nextScene:'ch4_branch5a'},{label:'留守工位整理考核日志，主动补齐细节台账',nextScene:'ch4_branch5b'},{label:'茶水间短暂摸鱼，松弛调整状态',nextScene:'ch4_branch5c'}]},
+ch4_branch5a:{tag:'【分支·帮带下午茶】',blocks:[{type:'narration',text:'你顺手帮办公室几位同事带了饮品。小事虽不起眼，但全员微好感小幅上涨。'}],choices:[{label:'__auto__',nextScene:'ch4_merge_end'}]},
+ch4_branch5b:{tag:'【分支·留守整理台账】',blocks:[{type:'narration',text:'你没有跟风摸鱼，留在工位逐条复盘今日考核流程、补全日志细节。李姐默默记下你的稳重心性。'}],choices:[{label:'__auto__',nextScene:'ch4_merge_end'}]},
+ch4_branch5c:{tag:'【分支·茶水间摸鱼】',blocks:[{type:'narration',text:'你短暂离开紧绷的工位，去茶水间放空调整状态。偶遇独自抽烟的张野，两人默契保持安静。'}],choices:[{label:'__auto__',nextScene:'ch4_merge_end'}]},
+ch4_merge_end:{tag:'【汇合·下班前】',blocks:[{type:'narration',text:'临近下班，OA再次推送更新，本轮所有评分数据、评委批注全部归档锁定。你截图留存关键页面。'},{type:'thought',text:'获得道具：第一轮评分结果OA截图（主线核心凭证）'},{type:'thought',text:'获得道具：双评委打分对比记录（破局关键线索）'},{type:'narration',text:'赵东升下班前路过你工位，眼神停顿片刻，无声施压。走廊深处，那件无人认领的工装依旧静静摆放。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+
+// ===== 第五章·流程陷阱 =====
+ch5_scene1:{tag:'【开场衔接｜早8:45 工位】',blocks:[{type:'narration',text:'入职第五日，首轮考核后第一个工作日。一早到岗，OA弹出赵东升发来的加急跨部门协查单——「季度项目数据核验确认」，要求当日签字回传。流程页面留有关键暗线：孙总仅阅览、不批复、不表态。'},{type:'narration',text:'陈默路过工位，余光扫过屏幕，语气淡漠。'},{type:'dialogue',text:'陈默："表格是废弃V2旧版，定稿归档为V3。你签V2，他拿V3去报销，差额你自己想。"'}],choices:[{label:'申诉履约率：用锁单证据证明扣分属于外部干预',nextScene:'ch5_branch1a'},{label:'替换评分项：找周姐用财务流程评价替代协同低分',nextScene:'ch5_branch1b'}]},
+ch5_branch1a:{tag:'【分支·申诉履约异常】',blocks:[{type:'narration',text:'你调出往期留存的流程台账与数据记录，提交系统申诉。系统临时标记：履约分数暂缓计入排名。'}],choices:[{label:'__auto__',nextScene:'ch5_merge1'}]},
+ch5_branch1b:{tag:'【分支·对接财务替代评分】',blocks:[{type:'narration',text:'你前往财务工位找到周姐。'},{type:'dialogue',text:'周姐："财务流程评价可以纳入参考。但我只认白纸黑字的自查报告和完整数据，补齐我就签字。"'},{type:'narration',text:'你返回工位，发现张野已经默默整理好全月财务台账，直接推到你桌面。'},{type:'dialogue',text:'张野："下次自己整理。别指望我次次兜底。"'}],choices:[{label:'__auto__',nextScene:'ch5_merge1'}]},
+ch5_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'你快速核对系统台账，确认核心结算数据被恶意篡改。刘伟主动上前协助核验。'},{type:'dialogue',text:'刘伟："我帮你对原版数据！我不敢硬刚，但核对绝对没问题。"'},{type:'dialogue',text:'刘伟："数据确实改了，就是专门针对我们。"'}],choices:[{label:'__auto__',nextScene:'ch5_scene2'}]},
+ch5_scene2:{tag:'【互动2·流程陷阱破局】',blocks:[{type:'narration',text:'面对赵东升精心布置的流程陷阱，你选择如何应对？'}],itemCheck:{itemId:'dual_score_compare',prompt:'检测到可用道具：【双评委打分对比记录】',description:'联动往期数据台账举证，可直接推翻对方"无意失误"的说辞。使用后道具将被消耗。',useLabel:'使用道具——正面举证破除疏忽说辞',skipLabel:'暂不使用——走隐忍路线',useScene:'ch5_branch_item',skipScene:'ch5_interact2'},choices:[{label:'留证质询·正面破局：固定证据，线上举证',nextScene:'ch5_branch2a'},{label:'静默搁置·隐忍避坑：留存证据，拖延拒签',nextScene:'ch5_branch2b'}]},
+ch5_branch_item:{tag:'【道具使用·正面举证】',blocks:[{type:'narration',text:'你第一时间截图留存全套证据，私信赵东升指出版本漏洞。'},{type:'dialogue',text:'赵东升："只是上传手滑选错版本，小疏忽而已，你先签字，我后续补发正确数据。"'},{type:'narration',text:'你消耗道具【双评委打分对比记录】，联动往期数据台账举证，直接推翻对方说辞。证据闭环无懈可击，赵东升只能撤回问题单据，重新上传正版V3数据文件。'},{type:'thought',text:'道具消耗：双评委打分对比记录（一次性证据）【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch5_merge2'}]},
+ch5_interact2:{tag:null,blocks:[],choices:[{label:'留证质询·正面破局',nextScene:'ch5_branch2a'},{label:'静默搁置·隐忍避坑',nextScene:'ch5_branch2b'}]},
+ch5_branch2a:{tag:'【分支·留证质询】',blocks:[{type:'narration',text:'你第一时间截图留存全套证据，私信赵东升指出版本漏洞。举证充分，赵东升无法辩驳，只能撤回问题单据。'}],choices:[{label:'__auto__',nextScene:'ch5_merge2'}]},
+ch5_branch2b:{tag:'【分支·静默搁置】',blocks:[{type:'narration',text:'你看破陷阱不动声色，快速归档全套证据，选择搁置单据、拒不签字。下午赵东升专程催单，你以附件加载异常为由持续拖延，完美避开陷阱。'}],choices:[{label:'__auto__',nextScene:'ch5_merge2'}]},
+ch5_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'赵东升精心布设的隐蔽埋线陷阱彻底失效。午休返岗，陈默扫过你留存的全套证据，一语冷透本质。'},{type:'dialogue',text:'陈默："他没本事挖这种细活。挖坑挖得这么细，不像赵东升的手艺。他就一条狗，狗往前扑是因为主人松了绳子。"'}],choices:[{label:'__auto__',nextScene:'ch5_scene3'}]},
+ch5_scene3:{tag:'【互动3·午休休整方式】',blocks:[{type:'narration',text:'午休时段，紧绷一上午的神经终于可以短暂松弛。'}],choices:[{label:'随同刘伟、张野食堂就餐',nextScene:'ch5_branch3a'},{label:'独自天台透气',nextScene:'ch5_branch3b',itemGain:'wang_rooftop_hint'}]},
+ch5_branch3a:{tag:'【分支·食堂团队小憩】',blocks:[{type:'dialogue',text:'张野："改痕。基础操作。再问收费。"'},{type:'narration',text:'项目部全员疏离状态消解，无声协作的团队默契初步成型。'}],choices:[{label:'__auto__',nextScene:'ch5_merge3'}]},
+ch5_branch3b:{tag:'【分支·天台独处】',blocks:[{type:'narration',text:'你独自上天台透气，偶遇王总。对方无多余寒暄，仅吐出三字关键提示便转身离开。'},{type:'dialogue',text:'王总："版本号。"'},{type:'thought',text:'获得道具：王总天台关键词提示记录（高层暗线伏笔）'}],choices:[{label:'__auto__',nextScene:'ch5_merge3'}]},
+ch5_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'午休归岗，李姐简短提点，告知数据篡改是赵东升惯用打压手段。'},{type:'dialogue',text:'李姐："这清单你自己看就行，别外传——传出去李姐就不是李姐了，是李叛徒。"'}],choices:[{label:'__auto__',nextScene:'ch5_scene4'}]},
+ch5_scene4:{tag:'【互动4·下午茶轻互动】',blocks:[{type:'narration',text:'午后的办公室节奏放缓。'}],choices:[{label:'帮同事顺带带下午茶',nextScene:'ch5_branch4a'},{label:'留守工位整理考核日志',nextScene:'ch5_branch4b'},{label:'茶水间短暂摸鱼',nextScene:'ch5_branch4c'}]},
+ch5_branch4a:{tag:'【分支·帮带下午茶】',blocks:[{type:'narration',text:'你顺手帮办公室几位同事带了饮品。全员微好感小幅上涨。'}],choices:[{label:'__auto__',nextScene:'ch5_chapter_end'}]},
+ch5_branch4b:{tag:'【分支·留守整理台账】',blocks:[{type:'narration',text:'你逐条复盘今日流程、补全日志细节。李姐默默记下你的稳重心性。'}],choices:[{label:'__auto__',nextScene:'ch5_chapter_end'}]},
+ch5_branch4c:{tag:'【分支·茶水间摸鱼】',blocks:[{type:'narration',text:'偶遇独自抽烟的张野，两人默契保持安静。'}],choices:[{label:'__auto__',nextScene:'ch5_chapter_end'}]},
+ch5_chapter_end:{tag:'【第五章·结束】',blocks:[{type:'narration',text:'午后工作全程低调平稳。临近下班，OA流程更新——赵东升撤回问题单据、补发正版文件。但孙总阅览节点永久留存。一份看似普通的协查文件，竟被层层包装成版本陷阱。'},{type:'narration',text:'走廊深处，那件无人认领的工装依旧静静悬挂。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+
+// ===== 第六章·限时锁单 =====
+ch6_scene1:{tag:'【早间突发·全员死局】',blocks:[{type:'narration',text:'清晨到岗，OA全屏弹出红色倒计时。项目部全员工单被锁，红字醒目：超时自动判定履约延误。'},{type:'timer',text:'倒计时：01:29:47'},{type:'dialogue',text:'赵东升刚好现身工位门口，语气平淡得刻意："下周编制优化，孙总定的规则，优先清掉有履约延误的部门。"'},{type:'timer',text:'倒计时跳至01:28:14'},{type:'dialogue',text:'陈默瘫在工位上扫了眼屏幕："中层没这权限，纯属高层拿捏基层找乐子。不想背锅就找王总，也就他不掺和这套烂规矩。"'}],choices:[{label:'让李姐联系IT，确认能否远程解锁',nextScene:'ch6_branch1a'},{label:'自己翻OA后台，核查锁单操作日志',nextScene:'ch6_branch1b',itemGain:'admin_log_record'}]},
+ch6_branch1a:{tag:'【分支·李姐联系IT】',blocks:[{type:'dialogue',text:'IT："不是系统故障，人为后台锁单，权限级别为副总级，我们基层运维没有任何操作权限。"'},{type:'timer',text:'倒计时更新：01:25:02'}],choices:[{label:'__auto__',nextScene:'ch6_merge1'}]},
+ch6_branch1b:{tag:'【分支·自查日志】',blocks:[{type:'narration',text:'你快速切入OA后台操作日志，查到本次锁单操作人为系统管理员，操作时间戳为昨晚23:47。'},{type:'timer',text:'倒计时更新：01:24:31'},{type:'thought',text:'获得道具：系统管理员操作日志查询记录'}],choices:[{label:'__auto__',nextScene:'ch6_merge1'}]},
+ch6_merge1:{tag:'【汇合】',blocks:[{type:'dialogue',text:'陈默："找他纯浪费时间，权限不够，啥用没有。"'},{type:'timer',text:'倒计时无情跳动：01:23:05'}],choices:[{label:'__auto__',nextScene:'ch6_scene2'}]},
+ch6_scene2:{tag:'【互动2·破局方向】',blocks:[{type:'timer',text:'倒计时：01:22:48'}],choices:[{label:'听刘伟的，去找赵东升碰碰运气',nextScene:'ch6_branch2a'},{label:'听陈默的，直接去找王总破局',nextScene:'ch6_branch2b'}]},
+ch6_branch2a:{tag:'【分支·找赵东升】',blocks:[{type:'narration',text:'你找到赵东升，对方假意安抚，推脱自身权限不足，实则刻意拖延时间。'},{type:'timer',text:'倒计时直接跳至01:08:22'}],choices:[{label:'__auto__',nextScene:'ch6_branch2b'}]},
+ch6_branch2b:{tag:'【分支·找王总】',blocks:[{type:'narration',text:'你直奔高层办公区，王总工位空无一人。电脑处于开机状态，桌上茶杯还冒着热气。'},{type:'timer',text:'倒计时：01:07:51'}],choices:[{label:'__auto__',nextScene:'ch6_scene3'}]},
+ch6_scene3:{tag:'【互动3·寻人抉择】',blocks:[{type:'timer',text:'倒计时：01:07:51'}],choices:[{label:'去天台找——日常透气点位',nextScene:'ch6_branch3a'},{label:'去茶水间找——时段高频点位',nextScene:'ch6_branch3b'},{label:'直接拨打手机联系',nextScene:'ch6_branch3c'}]},
+ch6_branch3a:{tag:'【分支·天台寻找】',blocks:[{type:'narration',text:'你推开天台大门，王总站在栏杆边静静伫立。'},{type:'dialogue',text:'王总："锁单的事？"'},{type:'timer',text:'倒计时更新：01:02:30'}],choices:[{label:'__auto__',nextScene:'ch6_merge3'}]},
+ch6_branch3b:{tag:'【分支·茶水间寻找】',blocks:[{type:'narration',text:'你横穿办公区赶往茶水间，正要折返，王总端着茶杯从走廊拐角走出。'},{type:'timer',text:'倒计时更新：00:57:18'}],choices:[{label:'__auto__',nextScene:'ch6_merge3'}]},
+ch6_branch3c:{tag:'【分支·电话联系】',blocks:[{type:'narration',text:'你拨通王总手机号，响铃五声无人接听。五分钟后，手机回拨。'},{type:'dialogue',text:'王总："刚才在和孙总通话，有事直说。"'},{type:'timer',text:'倒计时大幅下跌：00:52:40'}],choices:[{label:'__auto__',nextScene:'ch6_merge3'}]},
+ch6_merge3:{tag:'【汇合·王总办公室】',blocks:[{type:'narration',text:'王总端坐办公桌后，安静听完你对锁单危机的完整叙述。'},{type:'dialogue',text:'王总："我可以帮你解锁。但你怎么保证下次不会被人针对性锁单？"'}],choices:[{label:'__auto__',nextScene:'ch6_scene4'}]},
+ch6_scene4:{tag:'【互动4·王总提问】',blocks:[],choices:[{label:'应答：我会全程留证，让对方不敢轻易动手',nextScene:'ch6_branch4a'},{label:'应答：我增设流程双签，锁单需双人确认',nextScene:'ch6_branch4b'}]},
+ch6_branch4a:{tag:'【分支·答留证】',blocks:[{type:'dialogue',text:'王总："他们根本不怕证据。你留再多记录，该锁照样锁。"'},{type:'timer',text:'倒计时再跳三分钟：00:49:15'}],choices:[{label:'重新选择有效方案',nextScene:'ch6_branch4b'}]},
+ch6_branch4b:{tag:'【分支·答设防】',blocks:[{type:'dialogue',text:'王总："流程双签。可行。回去立刻落地落实。"'},{type:'narration',text:'他当场登录OA后台，录入专属审批密钥，下放临时解锁权限。'},{type:'dialogue',text:'王总："权限批好了。还差档案室合规核验单，上传后方可闭环留底。"'},{type:'timer',text:'倒计时更新：00:48:02'}],choices:[{label:'__auto__',nextScene:'ch6_scene5'}]},
+ch6_scene5:{tag:'【互动5·核验单卡点】',blocks:[{type:'narration',text:'解锁权限到位，系统弹出最终限制：必须上传档案室合规核验单。'},{type:'timer',text:'倒计时：00:47:31'}],choices:[{label:'亲自跑档案室调取纸质版',nextScene:'ch6_branch5a'},{label:'找张野调取留存电子版',nextScene:'ch6_branch5b',itemGain:'verify_record'}]},
+ch6_branch5a:{tag:'【分支·亲自跑档】',blocks:[{type:'narration',text:'你赶往档案室，管理员临时离岗。等候多时才找到对应核验单。'},{type:'timer',text:'倒计时仅剩：00:32:10'}],choices:[{label:'__auto__',nextScene:'ch6_scene6'}]},
+ch6_branch5b:{tag:'【分支·张野调档】',blocks:[{type:'dialogue',text:'张野："上次归档留存过，发你了。"'},{type:'timer',text:'倒计时：00:43:51'},{type:'thought',text:'获得道具：档案室合规核验单归档记录'}],choices:[{label:'__auto__',nextScene:'ch6_scene6'}]},
+ch6_scene6:{tag:'【互动6·最后生死三分钟】',blocks:[{type:'narration',text:'核验单成功上传，OA页面持续显示"处理中"，加载转圈三分钟毫无反应。'},{type:'timer',text:'倒计时无情跳动：00:03:02'}],choices:[{label:'原地干等，反复刷新页面',nextScene:'ch6_branch6a'},{label:'致电IT，申请手动刷新系统缓存',nextScene:'ch6_branch6b'}]},
+ch6_branch6a:{tag:'【分支·原地干等】',blocks:[{type:'dialogue',text:'刘伟："十、九、八——"'},{type:'timer',text:'倒计时跳至00:00:07的瞬间，页面骤然刷新！'},{type:'narration',text:'全员工单同步解锁，绿色状态亮起。刘伟瘫坐在工位上，久久没能缓过神。'}],choices:[{label:'__auto__',nextScene:'ch6_chapter_end'}]},
+ch6_branch6b:{tag:'【分支·电话加急】',blocks:[{type:'narration',text:'你立刻致电IT部门，运维远程手动刷新系统缓存，卡顿瞬间解除。'},{type:'timer',text:'倒计时定格在00:00:28，工单成功解锁！'},{type:'dialogue',text:'刘伟洗完脸折返工位，看着恢复正常的OA界面满脸错愕："解了？"'},{type:'dialogue',text:'张野："早解了。你白忙活一场。"'}],choices:[{label:'__auto__',nextScene:'ch6_chapter_end'}]},
+ch6_chapter_end:{tag:'【危机落幕·暗潮再起】',blocks:[{type:'narration',text:'工位区陷入半分钟的安静。陈默起身路过你的工位，指尖轻敲显示器边框。'},{type:'dialogue',text:'陈默："别松气。锁工单是最没技术含量的操作。下一步直接卡编制踢人，规矩从来都是他们说了算。"'},{type:'narration',text:'你复盘OA后台消息栏，发现一条锁单期间自动生成、危机解除后紧急撤回的系统通知：履约延误预判通知。'},{type:'thought',text:'获得道具：履约延误预判通知截图'},{type:'narration',text:'你转头望向走廊，那件无人认领的工装悬在暗处，灯光映照下愈发刺眼。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+
+// ===== 第七章·编制红线 =====
+ch7_scene1:{tag:'【早会公示·全员死线】',blocks:[{type:'narration',text:'晨间例会，OA全站弹窗更新公司文件——《季度部门编制优化考核方案》，孙总签发、全员公示、即时生效。本次裁评仅看三项硬性数据：人效比、履约率、跨部门协同评分。末位排名部门强制缩编。'},{type:'dialogue',text:'刘伟盯着屏幕低声苦笑："合着咱们三项全在及格线边缘，纯保底高危户。"'},{type:'narration',text:'页面底部弹出倒计时：48小时自证窗口期。'}],choices:[{label:'申诉履约率：用锁单证据证明扣分属于外部干预',nextScene:'ch7_branch1a'},{label:'替换评分项：找周姐用财务流程评价替代协同低分',nextScene:'ch7_branch1b'}]},
+ch7_branch1a:{tag:'【分支·申诉履约异常】',blocks:[{type:'narration',text:'你调出第六章留存的OA工单锁屏截图、管理员操作日志，提交系统申诉。系统临时标记：履约分数暂缓计入排名。'}],choices:[{label:'__auto__',nextScene:'ch7_merge1'}]},
+ch7_branch1b:{tag:'【分支·对接财务替代评分】',blocks:[{type:'narration',text:'你前往财务工位找到周姐。'},{type:'dialogue',text:'周姐："财务流程评价可以纳入参考。补齐自查报告和完整数据，我就签字。"'},{type:'narration',text:'张野已经默默整理好全月财务台账，推到你桌面。'},{type:'dialogue',text:'张野："下次自己整理。别指望我次次兜底。"'}],choices:[{label:'__auto__',nextScene:'ch7_merge1'}]},
+ch7_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'首轮危机暂时松动，但人效比、排名劣势仍未解决。真正的打压，才刚刚落地。'}],choices:[{label:'__auto__',nextScene:'ch7_scene2'}]},
+ch7_scene2:{tag:'【孙总巡场·阳谋落地】',blocks:[{type:'narration',text:'公示方案半小时后，孙总独自巡访项目部工位区。'},{type:'dialogue',text:'孙总："数据层面看，项目部人效还有优化空间。公司不是裁人，是让编制匹配产出。规则公开，机会均等。"'},{type:'narration',text:'你余光瞥见陈默全程低头敲键盘，屏幕界面是一页陌生的查询页面，数据快速滚动。'}],choices:[{label:'__auto__',nextScene:'ch7_scene2b'}]},
+ch7_scene2b:{tag:'【互动2·直面孙总挖坑问话】',blocks:[{type:'dialogue',text:'孙总："项目部一直人少活多，你觉得，是编制配比不足的问题，还是团队执行效率的问题？"'}],choices:[{label:'客观作答：编制不足，人员配比跟不上业务体量',nextScene:'ch7_branch2a'},{label:'稳妥作答：双向可优化，优先补齐流程、提升产出效率',nextScene:'ch7_branch2b'}]},
+ch7_branch2a:{tag:'【分支·直言编制问题】',blocks:[{type:'dialogue',text:'孙总："公司编制适配整体战略，不会单一迁就部门。有困难可以理解，但结果只看数据。"'}],choices:[{label:'__auto__',nextScene:'ch7_merge2'}]},
+ch7_branch2b:{tag:'【分支·中庸稳妥作答】',blocks:[{type:'dialogue',text:'孙总："懂得顺势调整，是职场基本能力。规则公平，全员一视同仁。"'}],choices:[{label:'__auto__',nextScene:'ch7_merge2'}]},
+ch7_merge2:{tag:'【汇合】',blocks:[{type:'dialogue',text:'刘伟低声点破："怪了，赵东升今天连个影子都没有。这说明啥？这次根本不是他组的局，是顶层直接定调。"'}],choices:[{label:'__auto__',nextScene:'ch7_scene3'}]},
+ch7_scene3:{tag:'【互动3·补全自证核心材料】',blocks:[{type:'narration',text:'想要跳出末位淘汰名单，必须在48小时窗口期内拉高综合评分。'}],choices:[{label:'补录漏算产出，拉高部门人效比',nextScene:'ch7_branch3a',itemGain:'dept_selfcheck_report'},{label:'提交评分异议，申诉跨部门打分不公',nextScene:'ch7_branch3b'}]},
+ch7_branch3a:{tag:'【分支·补录漏算数据】',blocks:[{type:'narration',text:'你翻阅往期工作流程台账，找出多笔系统未统计的落地项目记录，全部补入自查报告。人效比成功脱离垫底区间。'},{type:'thought',text:'获得道具：项目部自查补充报告'}],choices:[{label:'__auto__',nextScene:'ch7_merge3'}]},
+ch7_branch3b:{tag:'【分支·申诉评分不公】',blocks:[{type:'narration',text:'你整理往期打分记录，明确竞品部打分权重过高、恶意压分的偏差问题，写入正式申诉材料。'}],choices:[{label:'__auto__',nextScene:'ch7_merge3'}]},
+ch7_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'李姐默默走到你工位，放下一份加密文件。'},{type:'dialogue',text:'李姐："这是前几个季度的公开评分明细，不算违规内容。别谢，李姐什么都不知道。"'}],choices:[{label:'__auto__',nextScene:'ch7_scene4'}]},
+ch7_scene4:{tag:'【午休插曲·陈默二次反常铺垫】',blocks:[{type:'narration',text:'午休时段，陈默独自起身去往茶水间，片刻后折返工位，手里空空如也，没有往常必喝的咖啡。'},{type:'dialogue',text:'刘伟："奇怪了，陈默今天不喝咖啡？这也太罕见了。"'},{type:'narration',text:'陈默充耳不闻，落座后继续沉默敲键，全程零交流。'}],choices:[{label:'__auto__',nextScene:'ch7_scene5'}]},
+ch7_scene5:{tag:'【互动4·日常接梗调剂节奏】',blocks:[{type:'dialogue',text:'刘伟："这班上的，每天都在通关保命副本。"'}],choices:[{label:'顺势自嘲附和，轻松接梗',nextScene:'ch7_branch4a'},{label:'沉默专注工作，无视玩笑',nextScene:'ch7_branch4b'}]},
+ch7_branch4a:{tag:'【分支·顺势接梗】',blocks:[{type:'narration',text:'你随口搭话附和，自嘲连日被动应对层层打压，工位区压抑氛围短暂缓和。'}],choices:[{label:'__auto__',nextScene:'ch7_merge4'}]},
+ch7_branch4b:{tag:'【分支·静默专注】',blocks:[{type:'narration',text:'你选择低头核对数据，优先赶工完善材料。'}],choices:[{label:'__auto__',nextScene:'ch7_merge4'}]},
+ch7_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'调剂过后，全员迅速收敛状态，默契分工、全力冲刺自证材料。'}],choices:[{label:'__auto__',nextScene:'ch7_scene6'}]},
+ch7_scene6:{tag:'【互动5·陈默反常·暗流浮现】',blocks:[{type:'narration',text:'你整理申诉材料时，无意间翻到一份陌生流转单据：竞品部与外部公司的异常资金往来记录，挂靠在旧项目台账之中。'}],choices:[{label:'直接拿去问陈默核实线索',nextScene:'ch7_branch5a'},{label:'暂时归档留存，优先搞定本次自证',nextScene:'ch7_branch5b',itemGain:'abnormal_fund_record'}]},
+ch7_branch5a:{tag:'【分支·主动询问】',blocks:[{type:'dialogue',text:'陈默："不知道，别问我。"'},{type:'narration',text:'语气冰冷短促，她直接戴上耳机，彻底终止对话，反常至极。'}],choices:[{label:'__auto__',nextScene:'ch7_merge5'}]},
+ch7_branch5b:{tag:'【分支·静默存档】',blocks:[{type:'narration',text:'你选择将异常单据加密存档，暂时搁置疑点。'},{type:'thought',text:'获得道具：竞品部异常资金流转记录'},{type:'narration',text:'临近下班，你发现陈默工位早已空置。李姐随口提及，她今日提前离岗——入职以来，陈默从未早退。'}],choices:[{label:'__auto__',nextScene:'ch7_merge5'}]},
+ch7_merge5:{tag:'【汇合·窗口期截止前夕】',blocks:[{type:'narration',text:'48小时自证窗口期仅剩最后两小时，全套申诉、补录材料已整理完毕。'}],choices:[{label:'__auto__',nextScene:'ch7_scene7'}]},
+ch7_scene7:{tag:'【互动6·窗口期最终提交抉择】',blocks:[{type:'narration',text:'你手握留存道具，拥有最后一次补强机会。'}],itemCheck:{itemId:'wang_key_dialogue',prompt:'检测到可用道具：【王总关键对话记录】',description:'在材料末尾追加流程双签、事前设防的规则补充说明。使用后道具将被消耗。',useLabel:'使用道具——追加规则设防说明补强材料',skipLabel:'直接提交现有材料，稳妥闭环过关',useScene:'ch7_branch6b_item',skipScene:'ch7_branch6a'},choices:[{label:'直接提交现有材料，稳妥闭环过关',nextScene:'ch7_branch6a'},{label:'消耗王总关键对话记录，追加规则设防说明',nextScene:'ch7_branch6b',consumeItem:'wang_key_dialogue'}]},
+ch7_branch6a:{tag:'【分支·稳妥提交】',blocks:[{type:'narration',text:'你按时上传全部自查报告与申诉数据，平稳完成自证闭环。'}],choices:[{label:'__auto__',nextScene:'ch7_chapter_end'}]},
+ch7_branch6b_item:{tag:'【道具使用·追加设防说明】',blocks:[{type:'narration',text:'你消耗留存的王总关键对话记录，在材料末尾追加流程双签、事前设防的规则补充说明，进一步固化合规性。'},{type:'thought',text:'道具消耗：王总关键对话记录【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch7_chapter_end'}]},
+ch7_branch6b:{tag:'【分支·补强提交】',blocks:[{type:'narration',text:'你消耗留存的王总关键对话记录，在材料末尾追加流程双签、事前设防的规则补充说明。'},{type:'thought',text:'道具消耗：王总关键对话记录【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch7_chapter_end'}]},
+ch7_chapter_end:{tag:'【窗口期截止·危机缓冲落幕】',blocks:[{type:'narration',text:'48小时自证时限正式截止。OA更新最终排名公示：项目部移出末位淘汰名单，转入一月观察期。但你敏锐察觉异样，随手刷新OA后台权限端口——后台留存一份仅高阶权限可见、未发布的公告草稿：《部门考核规则修订意见》，落款人：孙总。你只来得及看清核心一行细则：取消部门自评申诉通道。'},{type:'thought',text:'获得道具：孙总规则修订未发布草稿'},{type:'narration',text:'这一刻你彻底明晰：你拼尽全力换来的活路，已经被孙总提前封死。下班熄灯前，陈默工位空空荡荡，只剩一张空白便利贴静置桌面；走廊深处，那件无人认领的旧工装依旧悬挂刺眼。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第八章·全盘施压 =====
+ch8_scene1:{tag:'【早会官宣·生路彻底封死】',blocks:[{type:'narration',text:'清晨全员到岗，OA全站弹窗强制推送孙总签发新版考核条例，昨日后台草稿正式生效。三条新规逐条落地，直接作废第七章所有自救手段。'},{type:'bold',text:'① 取消部门所有自评、异议、申诉通道，评分以评审组终审为准'},{type:'bold',text:'② 重置评分权重，关闭部门互评，周姐财务评分替代通道彻底失效'},{type:'bold',text:'③ 新增应急响应时效考核，跨部门协查工单初核时限压缩至2小时，超时即扣分'},{type:'narration',text:'屏幕红字置顶：本年度考核规则动态迭代，以最新公示版本为准。全员紧盯屏幕，工位区气氛瞬间凝固。'},{type:'dialogue',text:'刘伟喉结滚动，低声吐槽："刚学会走路，路直接被刨没了。合着昨天白忙活一整宿。"'},{type:'narration',text:'众人唏嘘之际，唯独陈默只扫了屏幕一眼，面无表情关掉公告页面，继续敲键。'},{type:'dialogue',text:'刘伟："默姐，这新规你怎么看？咱们还有辙吗？"'},{type:'dialogue',text:'陈默："有什么好看的。规则是他们的，怎么改都一样——你申诉写得再漂亮，也追不上他改规则的速度。"'},{type:'narration',text:'语气平淡却透着反常的疲惫，没有往日的犀利预判，只剩近乎认命的清醒，一针扎破所有人的侥幸。'}],choices:[{label:'__auto__',nextScene:'ch8_scene2'}]},
+ch8_scene2:{tag:'【互动1·首轮承压·工单分配抉择】',blocks:[{type:'narration',text:'新规落地第一小时，两张跨部门协查工单同步派发，全部标注2小时应急初核时限。人手紧缺，双线并行必然顾此失彼。'}],choices:[{label:'重心倾斜：保核心工单质量，暂缓次要工单',nextScene:'ch8_branch1a'},{label:'全员分摊：双线同步推进，保质不保满',nextScene:'ch8_branch1b'}]},
+ch8_branch1a:{tag:'【分支·取舍保核】',blocks:[{type:'narration',text:'你果断取舍，集中全员精力攻坚核心工单，优先守住关键履约数据，次要工单延后处理。系统最终判定：核心工单满分通过，次要工单标注响应滞后，轻微扣分。'}],choices:[{label:'__auto__',nextScene:'ch8_merge1'}]},
+ch8_branch1b:{tag:'【分支·全员分摊】',blocks:[{type:'narration',text:'你安排全员拆分工作量，双线并行赶工，两份工单均按时初核完毕。系统最终判定：时效达标，但细节校验存在疏漏，扣除少量质量分。'}],choices:[{label:'__auto__',nextScene:'ch8_merge1'}]},
+ch8_merge1:{tag:'【汇合·赵东升首巡】',blocks:[{type:'narration',text:'首轮危机平稳扛住，无重大失分。刚落地喘息，赵东升直接现身工位区。他神态客气温和，却没有半分余地，往日的刻意伪装彻底褪去，只剩笃定的压迫感。'},{type:'dialogue',text:'赵东升："新规是孙总亲自敲定的，我也是刚同步到通知。你们抓紧适应节奏，后续所有考核全部按新版执行，别到时候说不清。"'},{type:'narration',text:'他不提针对、不提打压，但字字都在点明：项目部再无任何辩解、缓冲、翻盘的资格。说完转身离场，不留辩驳空间。'}],choices:[{label:'__auto__',nextScene:'ch8_scene3'}]},
+ch8_scene3:{tag:'【偶遇周姐·中立人设闭环】',blocks:[{type:'narration',text:'你去往茶水间途中偶遇周姐，她脚步匆匆，神色平淡无波澜。瞥见你后，她停顿半秒，极简一句交代。'},{type:'dialogue',text:'周姐："规则更新了，财务评价不再纳入考核参考。后续按新规流程走。"'},{type:'narration',text:'不站队、不惋惜、不解释，始终恪守中立，彻底闭环唯一外部破局通道。'}],choices:[{label:'__auto__',nextScene:'ch8_scene4'}]},
+ch8_scene4:{tag:'【互动2·高压抱团暖意】',blocks:[{type:'narration',text:'首轮施压过后，全员短暂休整。刘伟靠着椅背长长叹气，消解紧绷神经。'},{type:'dialogue',text:'刘伟："两小时时效已经要全速飞着干了，明天改成一个半小时，是打算让我们用意念交工？"'}],choices:[{label:'顺势宽慰，抱团扛压',nextScene:'ch8_branch2a'},{label:'静默沉淀，专注做事',nextScene:'ch8_branch2b'}]},
+ch8_branch2a:{tag:'【分支·暖意抱团】',blocks:[{type:'narration',text:'你轻声宽慰众人，稳住军心，点明只要稳步扛住、不出纰漏，就还有余地。工位区紧绷的氛围稍稍松动。'}],choices:[{label:'__auto__',nextScene:'ch8_merge2'}]},
+ch8_branch2b:{tag:'【分支·静默实干】',blocks:[{type:'narration',text:'你没有多余言语，低头复盘工单细节。众人见状也迅速收敛情绪，默默回归工位干活。'}],choices:[{label:'__auto__',nextScene:'ch8_merge2'}]},
+ch8_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'短暂调剂过后，团队默契拉满，无需调度，全员自动进入高压备战状态。'}],choices:[{label:'__auto__',nextScene:'ch8_scene5'}]},
+ch8_scene5:{tag:'【互动3·二次施压·风险抉择】',blocks:[{type:'narration',text:'首轮工单尚未办结，赵东升临时追加一张加急协查工单。你快速扫读内容，立刻发现单据内的基础数据存在明显偏差、逻辑对不上。典型的流程坑：接了要耗费大量时间核对纠错；不接会被记录"拒不配合跨部门工作"。'}],choices:[{label:'接单兜底：接手工单，耗时纠错填坑，保全部门配合分',nextScene:'ch8_branch3a'},{label:'依规拒接：标注数据异常退回，承担考核记录风险',nextScene:'ch8_branch3b'}]},
+ch8_branch3a:{tag:'【分支·接单兜底】',blocks:[{type:'narration',text:'你选择全盘接下新增工单，全员加班核对纠错，最终三份工单全部压线办结，当期零失分，但全员身心俱疲。'}],choices:[{label:'__auto__',nextScene:'ch8_merge3'}]},
+ch8_branch3b:{tag:'【分支·依规拒接】',blocks:[{type:'narration',text:'你提交数据异常说明，依规退回问题工单。赵东升面色不变，当场记录：项目部对接人配合度不足，流程响应滞后。一条轻微瑕疵档案留存备案，不直接扣分，但挂底。'}],choices:[{label:'__auto__',nextScene:'ch8_merge3'}]},
+ch8_merge3:{tag:'【汇合·王总过路】',blocks:[{type:'narration',text:'本轮风险抉择落地，张野低头敲击键盘，默默同步归档所有工单记录，全程无声兜底。'},{type:'dialogue',text:'张野："记录存好了。"'},{type:'narration',text:'午后走廊，你复盘材料时偶遇王总迎面走来。他没有驻足、没有寒暄，擦肩而过时，只低声落下两个字。'},{type:'dialogue',text:'王总："扛住。"'},{type:'narration',text:'无解释、无铺垫、无退路提示。这是本轮阳谋围剿下，唯一的高层信号。'}],choices:[{label:'__auto__',nextScene:'ch8_scene6'}]},
+ch8_scene6:{tag:'【互动4·道具补强·申请缓冲兜底】',blocks:[{type:'narration',text:'持续高压围剿下，你手握第七章留存的合规道具，拥有一次缓冲补强机会。'}],itemCheck:{itemId:'dept_selfcheck_report',prompt:'检测到可用道具：【项目部自查补充报告】',description:'证明部门主动优化意愿，申请短期考核缓冲。使用后道具将被消耗。',useLabel:'使用自查报告——申请考核缓冲',skipLabel:'暂不使用——看另一选项',useScene:'ch8_branch4a_item',skipScene:'ch8_scene6_alt'},choices:[{label:'消耗自查补充报告：证明优化意愿，申请缓冲',nextScene:'ch8_branch4a',consumeItem:'dept_selfcheck_report'},{label:'消耗财务替代批复单：以历史合规记录申请考量',nextScene:'ch8_branch4b',consumeItem:'zhoujie_replace_approval'}]},
+ch8_scene6_alt:{tag:null,blocks:[],itemCheck:{itemId:'zhoujie_replace_approval',prompt:'检测到可用道具：【周姐财务流程评价替代批复单】',description:'以历史合规改进记录，申请评审酌情考量。使用后道具将被消耗。',useLabel:'使用财务批复单——申请评审考量',skipLabel:'暂不使用',useScene:'ch8_branch4b_item',skipScene:'ch8_merge4'},choices:[{label:'消耗财务替代批复单：以历史合规记录申请考量',nextScene:'ch8_branch4b',consumeItem:'zhoujie_replace_approval'},{label:'暂不使用道具',nextScene:'ch8_merge4'}]},
+ch8_branch4a_item:{tag:'【道具使用·凭优化记录缓冲】',blocks:[{type:'narration',text:'你提交项目部自查补充报告，佐证部门长期主动整改、优化流程，成功争取到短期观察容错缓冲。'},{type:'thought',text:'道具消耗：项目部自查补充报告【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch8_merge4'}]},
+ch8_branch4a:{tag:'【分支·凭优化记录缓冲】',blocks:[{type:'narration',text:'你提交项目部自查补充报告，佐证部门长期主动整改、优化流程，成功争取到短期观察容错缓冲。'},{type:'thought',text:'道具消耗：项目部自查补充报告【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch8_merge4'}]},
+ch8_branch4b_item:{tag:'【道具使用·凭历史合规缓冲】',blocks:[{type:'narration',text:'你调出周姐财务流程评价替代批复单，以历史合规改进记录佐证部门积极性，成功降低本轮瑕疵权重。'},{type:'thought',text:'道具消耗：周姐财务流程评价替代批复单【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch8_merge4'}]},
+ch8_branch4b:{tag:'【分支·凭历史合规缓冲】',blocks:[{type:'narration',text:'你调出周姐财务流程评价替代批复单，以历史合规改进记录佐证部门积极性，成功降低本轮瑕疵权重。'},{type:'thought',text:'道具消耗：周姐财务流程评价替代批复单【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch8_merge4'}]},
+ch8_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'道具消耗生效，本轮全盘施压的失分风险被压至最低，成功守住部门基本盘。'}],choices:[{label:'__auto__',nextScene:'ch8_scene7'}]},
+ch8_scene7:{tag:'【互动5·前瞻预判·应对新规迭代】',blocks:[{type:'narration',text:'临近傍晚，OA再次弹出孙总签发的补充预告：次日起，应急工单时限由2小时进一步压缩至1.5小时。规则还在迭代，压力持续加码。'}],choices:[{label:'连夜加班，预制工单模板、梳理流程，提前设防',nextScene:'ch8_branch5a'},{label:'正常收尾下班，次日临场应对',nextScene:'ch8_branch5b'}]},
+ch8_branch5a:{tag:'【分支·提前设防】',blocks:[{type:'narration',text:'你选择留守加班，连夜梳理标准化流程、预制填报模板，提前适配更严苛的新规节奏。'}],choices:[{label:'__auto__',nextScene:'ch8_merge5'}]},
+ch8_branch5b:{tag:'【分支·稳妥收尾】',blocks:[{type:'narration',text:'你按时收尾当日工作，保证零失误收官，选择次日再适配新规迭代。'}],choices:[{label:'__auto__',nextScene:'ch8_merge5'}]},
+ch8_merge5:{tag:'【赵东升终场总结·威慑收尾】',blocks:[{type:'narration',text:'下班前夕，赵东升驻足项目部门口，没有进门，淡淡扫过全场。'},{type:'dialogue',text:'赵东升："今天第一天，大家辛苦了。后面节奏会更快，早点休息。"'},{type:'narration',text:'温和的语气里全是笃定的威慑：今日只是开胃，后续围剿只会更狠。'}],choices:[{label:'__auto__',nextScene:'ch8_scene8'}]},
+ch8_scene8:{tag:'【陈默终极反常·伏笔拉满】',blocks:[{type:'narration',text:'全员收尾收拾工位、氛围松懈之际，你路过陈默工位，恰好瞥见她迅速将私人手机倒扣桌面。屏幕熄灭前一瞬，你清晰看到页面停留在消息发送成功的界面。她工作时间从不碰私人手机，全程只用OA办公。'},{type:'narration',text:'她没有抬头，没有解释，靠回椅背，闭眼静坐。不是疲惫休憩，是安静等待，静待某个未知结果。'}],choices:[{label:'__auto__',nextScene:'ch8_scene9'}]},
+ch8_scene9:{tag:'【互动6·终局抉择·深夜秘讯】',blocks:[{type:'narration',text:'当日全盘施压艰难收官，全员陆续离场。你准备关灯锁工位时，OA后台弹出一条仅管理员可见的未读草稿通知，无署名、无公示标记。在规则日日迭代、步步围剿的当下，这条隐秘消息极具风险。'}],choices:[{label:'点开查看：摸清隐秘动向，提前掌握明日底牌',nextScene:'ch8_branch6a',itemGain:'liability_draft'},{label:'直接忽略：恪守本分稳妥离场，不碰未知风险',nextScene:'ch8_branch6b'}]},
+ch8_branch6a:{tag:'【分支·探知秘讯】',blocks:[{type:'narration',text:'你点开草稿，页面加载一瞬便弹出权限警示。你只来得及瞥见一行核心内容：明日考核将新增"部门负责人连带追责机制"，随即页面自动闪退、权限收回。你提前锁定了明日最大引爆点，手握关键前置情报。'},{type:'thought',text:'获得道具：连带追责机制草稿通知'}],choices:[{label:'__auto__',nextScene:'ch8_chapter_end'}]},
+ch8_branch6b:{tag:'【分支·稳妥离场】',blocks:[{type:'narration',text:'你选择不触碰未知后台内容，直接关灯收尾离场。安稳度过今日收官，但彻底错失预判明日危机的唯一机会，次日引爆事件将毫无铺垫空降。'}],choices:[{label:'__auto__',nextScene:'ch8_chapter_end'}]},
+ch8_chapter_end:{tag:'【第八章·结束】',blocks:[{type:'narration',text:'夜色渐沉，工位区灯光逐盏熄灭，全员陆续下班离场。你是最后一个留守收尾的人。'},{type:'narration',text:'你回头望去，左侧是陈默空置的工位，桌面干净整洁，唯有一台手机屏幕朝下静静扣放，藏匿着她不肯言说的等待；右侧是走廊深处，那件无人认领的旧工装依旧悬挂在阴影里，沉淀着过往未解的隐秘。'},{type:'dialogue',text:'陈默临走前留下一句轻缓却刺骨的收尾，落定本章所有暗流："明天会更狠。但也就是明天了。"'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第九章·全面引爆 =====
+ch9_scene1:{tag:'【晨间平静·暴风雨前置】',blocks:[{type:'narration',text:'入职第九日清晨，工位区节奏反常安稳。昨日新规迭代、时效压缩、全盘施压的高压过后，今日没有临时工单、没有追加考核、没有OA弹窗轰炸。一切回归最常规的办公状态。'},{type:'dialogue',text:'刘伟敲着键盘长舒一口气："总算安稳一天，再连轴转我CPU都要烧了。"'},{type:'narration',text:'没人察觉，这份平静不是喘息，是陷阱落地前的最后留白。'}],choices:[{label:'顺势放松，短暂卸压',nextScene:'ch9_branch1a'},{label:'保持警惕，照常复盘风险',nextScene:'ch9_branch1b'}]},
+ch9_branch1a:{tag:'【分支·短暂放松】',blocks:[{type:'narration',text:'你短暂放下连日紧绷，跟着团队稍作休整，默许这份来之不易的安稳。'}],choices:[{label:'__auto__',nextScene:'ch9_merge1'}]},
+ch9_branch1b:{tag:'【分支·警惕复盘】',blocks:[{type:'narration',text:'你没有彻底松懈，趁着空档复盘昨日新规漏洞，潜意识里总觉得高压不会无故暂停。'}],choices:[{label:'__auto__',nextScene:'ch9_merge1'}]},
+ch9_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'无论放松与否，无人能预判今日的杀局。平静，只为引爆蓄力。'}],choices:[{label:'__auto__',nextScene:'ch9_scene2'}]},
+ch9_scene2:{tag:'【陷阱第一步·诱饵下发】',blocks:[{type:'narration',text:'上午十点，OA静默推送一条孙总亲自签发的任务：《跨部门项目数据联合巡检》。任务描述常规至极，和前八章所有例行巡检任务一模一样。'},{type:'narration',text:'赵东升亲自送来纸质文件，态度客气自然，和往日无异。'},{type:'dialogue',text:'赵东升："例行巡检，走个流程，尽快签一下归档。"'},{type:'narration',text:'你翻阅文件，内容合规、数据规整，完全挑不出硬性问题。唯一的不同藏在签字页底端——一条常年灰色未激活的模板条款，今日被后台悄悄勾选启用。'},{type:'bold',text:'小字条款：本人确认数据无误，并对本次核查结果承担全部连带责任。'},{type:'narration',text:'旧档可查、条款真实、一直存在——只是过往从未启用。孙总没有新增规则，只是激活了沉睡的陷阱。'}],choices:[{label:'快速扫过直接签字',nextScene:'ch9_branch2a'},{label:'逐行核对，留意异常小字条款',nextScene:'ch9_branch2b'}]},
+ch9_branch2a:{tag:'【分支·快速签字】',blocks:[{type:'narration',text:'你默认是例行流程，没有细读，落笔签字。'},{type:'thought',text:'疏忽愧疚线——后续自我归因：我是因为粗心大意害了她。'}],choices:[{label:'__auto__',nextScene:'ch9_merge2'}]},
+ch9_branch2b:{tag:'【分支·细读发现】',blocks:[{type:'narration',text:'你逐行核对，精准捕捉到"连带责任"的激活条款，瞬间察觉不对劲。你抬眼质问赵东升，对方早有准备，语气平淡从容。'},{type:'dialogue',text:'赵东升："模板自带的例行条款，旧档一直都在，只是平时用得少。你可以翻翻往期记录。"'},{type:'narration',text:'你调取旧档核对，条款确实存在，只是往年从未勾选生效。真话掺着假话，最让人无从辩驳。'},{type:'thought',text:'软弱愧疚线——后续自我归因：我看见了，却没顶住压力。'}],choices:[{label:'__auto__',nextScene:'ch9_merge2'}]},
+ch9_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'签字完成，文件归档。陷阱第一环稳稳落地。'}],choices:[{label:'__auto__',nextScene:'ch9_scene3'}]},
+ch9_scene3:{tag:'【王总留白·预知不救的暗示】',blocks:[{type:'narration',text:'你刚归档文件，王总恰好从走廊路过。他目光扫过你桌面的巡检签字单，脚步极细微地顿了半秒，深深看了你一眼。没有提醒、没有劝阻、没有停顿、没有言语。一瞬之后，他如常前行。'},{type:'narration',text:'此刻的你毫无察觉。待到事后回望，才懂这一眼是全盘知晓、却无能为力的默认。'}],choices:[{label:'__auto__',nextScene:'ch9_scene4'}]},
+ch9_scene4:{tag:'【互动3·二次抉择·抗压底线】',blocks:[{type:'narration',text:'赵东升见你迟疑，轻声施压，催促归档闭环。'}],choices:[{label:'顺从压力，完成签字归档',nextScene:'ch9_branch3a'},{label:'顶住压力，暂时拒签，要求核实条款启用依据',nextScene:'ch9_branch3b'}]},
+ch9_branch3a:{tag:'【分支·顺势办结】',blocks:[{type:'narration',text:'你最终选择妥协，按流程办结归档，任务看似圆满收尾。'}],choices:[{label:'__auto__',nextScene:'ch9_merge3'}]},
+ch9_branch3b:{tag:'【分支·强硬拒签】',blocks:[{type:'narration',text:'你坚持原则暂缓签字，要求出具本次条款启用的专项通知。赵东升面色不变，当场记录：项目部对接人配合度不足，流程响应滞后。你保住了不踩坑的底线，却被扣上不配合的考核瑕疵。'},{type:'thought',text:'无力愧疚线——后续自我归因：我做对了所有选择，却依然留不住结果。'}],choices:[{label:'__auto__',nextScene:'ch9_merge3'}]},
+ch9_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'陷阱第二环锁死。无论签与不签，收割条件均已达成。'}],choices:[{label:'__auto__',nextScene:'ch9_scene5'}]},
+ch9_scene5:{tag:'【陈默苦肉计·无声入局】',blocks:[{type:'narration',text:'本次巡检数据，整体合规、无虚假、无篡改。唯有三处极其细微的格式瑕疵：备注栏留白、时间戳精度不足、分项格式不统一。放在平日，陈默一定会提前修正、抹平所有可被挑刺的细节。'},{type:'narration',text:'但今天，她全程沉默、全程未动、全程不提醒。她没有制造错误，只是放弃了往日的兜底修正。不是疏忽，是选择。她主动留给孙总一个合法、合规、可追责、可追溯的完美切入点。'}],choices:[{label:'__auto__',nextScene:'ch9_scene6'}]},
+ch9_scene6:{tag:'【陷阱引爆·午后抽查】',blocks:[{type:'narration',text:'午后两点，OA弹窗突发全员通知：孙总亲自抽查本次跨部门巡检台账，判定数据存在合规瑕疵，需追责到人。通知同步附上你签字的连带责任条款页面。'},{type:'narration',text:'权责清晰、白纸黑字、你亲笔确认——你对本次核查结果承担全部连带责任。工位区瞬间死寂。'}],choices:[{label:'__auto__',nextScene:'ch9_scene7'}]},
+ch9_scene7:{tag:'【互动4·终局留白·最后温存】',blocks:[{type:'narration',text:'所有人低头装忙、无人敢说话，只剩死寂蔓延。你可以趁着最后空档，做一次无结局的收尾互动。'}],choices:[{label:'轻声开口，提醒陈默核对一遍数据备份',nextScene:'ch9_branch4a'},{label:'沉默观望，不打扰她的安静',nextScene:'ch9_branch4b'}]},
+ch9_branch4a:{tag:'【分支·温柔提醒】',blocks:[{type:'narration',text:'你低声提醒陈默留存数据备份，哪怕此刻大局已定，你仍想守住最后一丝稳妥。'}],choices:[{label:'__auto__',nextScene:'ch9_merge4'}]},
+ch9_branch4b:{tag:'【分支·静默不扰】',blocks:[{type:'narration',text:'你看懂她早已笃定的心态，没有多余打扰，安静陪她等候结果。'}],choices:[{label:'__auto__',nextScene:'ch9_merge4'}]},
+ch9_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'短暂互动落幕，这是你和陈默在项目部最后一次正常共事互动。'}],choices:[{label:'__auto__',nextScene:'ch9_scene8'}]},
+ch9_scene8:{tag:'【孙总登场·温柔杀局】',blocks:[{type:'narration',text:'孙总缓步走入项目部，手中拿着纸质核查报告，神色平和、语气温和，没有半分问责的戾气。他全程不针对你、不指责你、不翻你签字的账。'},{type:'dialogue',text:'孙总："核查我看过了，数据存在合规瑕疵。按条款需要有人担责。你们部门自己核实，是谁经手的。"'},{type:'narration',text:'他把选择权完全抛给团队，把刀递到你手里，让你亲手决定谁来买单。赵东升站在孙总身后，全程沉默、面无表情、不插话、不补刀。'}],choices:[{label:'__auto__',nextScene:'ch9_scene9'}]},
+ch9_scene9:{tag:'【互动5·终极抉择·当众立场】',blocks:[{type:'narration',text:'全场目光聚焦，所有人都在等你的回应。'}],choices:[{label:'沉默不语，等待团队定论',nextScene:'ch9_branch5a'},{label:'主动开口，尝试自行承担责任',nextScene:'ch9_branch5b'}]},
+ch9_branch5a:{tag:'【分支·沉默观望】',blocks:[{type:'narration',text:'你一时失语，僵在原地，没有开口辩驳，也没有主动担责。'}],choices:[{label:'__auto__',nextScene:'ch9_merge5'}]},
+ch9_branch5b:{tag:'【分支·主动扛责】',blocks:[{type:'narration',text:'你咬牙开口，试图以签字对接人的身份自行扛下所有责任，保全团队。'}],choices:[{label:'__auto__',nextScene:'ch9_merge5'}]},
+ch9_merge5:{tag:'【汇合·全局收束】',blocks:[{type:'narration',text:'无论你开口与否，结局早已注定。在所有人僵持的瞬间，陈默平静开口，声音清淡却穿透整间办公室。'},{type:'dialogue',text:'陈默："数据是我经手的。不用查了。"'},{type:'narration',text:'事实陈述干净利落，没有铺垫、没有悲壮、没有辩解。三秒死寂过后，孙总轻声落锤。'},{type:'dialogue',text:'孙总："既然本人确认，那就按条款执行。相关责任人做离职处理。"'},{type:'narration',text:'全程合规、全程公正、全程无懈可击。孙总转身离场，不留半句多余评判。赵东升跟在孙总身后离开，走到门口时脚步顿了一下，回头看了一眼陈默的工位。不是得意。是终于结束了。'}],choices:[{label:'__auto__',nextScene:'ch9_scene10'}]},
+ch9_scene10:{tag:'【李姐无声兜底·中立人设闭环】',blocks:[{type:'narration',text:'孙总、赵东升离场后，办公室紧绷的氛围依旧没有松动。李姐淡淡开口，一句话守住自己的人设，也护住了陈默最后的体面。'},{type:'dialogue',text:'李姐："陈默的离职交接，我来跟进。毕竟全公司我最熟离职流程。"'},{type:'narration',text:'不质疑规则、不反抗决定、不为谁求情。只是默默把流程接管，杜绝所有落井下石的额外刁难。'}],choices:[{label:'__auto__',nextScene:'ch9_scene11'}]},
+ch9_scene11:{tag:'【互动6·最后追问·扎心终局】',blocks:[{type:'narration',text:'众人散去，只剩你和陈默两人留在工位区。你无法接受这个结果，上前追问原因。'},{type:'dialogue',text:'陈默："条款是你签的。我不认，就是你扛。你扛不住。"'},{type:'narration',text:'事实陈述、后果点明、顺手扎穿你的侥幸。她不怪你、不怨你、不卖惨，只用最平静的话，让你终生自我拉扯。说完，她低头落座，不再看你、不再解释、不再说话。'}],choices:[{label:'__auto__',nextScene:'ch9_scene12'}]},
+ch9_scene12:{tag:'【团队反应·情绪宣泄】',blocks:[{type:'dialogue',text:'刘伟："这叫什么事儿……明明谁都没做错，偏偏有人要走。赵东升今天也邪门，全程站那儿当背景板，嘴闭得比张野的耳机还严实。我就说默姐平时嘴毒是攒人品，合着最后人品攒够了，拿离职换的。"'},{type:'dialogue',text:'张野默默摘下耳机，淡淡吐出一句："戏演完了。"'},{type:'narration',text:'说完，重新戴回耳机。全程无一字多余，却把无声的惋惜、无奈与冰冷局势，尽数道尽。'}],choices:[{label:'__auto__',nextScene:'ch9_chapter_end'}]},
+ch9_chapter_end:{tag:'【第九章·结束】',blocks:[{type:'narration',text:'夜幕降临，下班时间到。陈默的工位依旧整洁、物品齐全、人还在场，没有收拾、没有离场、没有官宣离开。'},{type:'narration',text:'你是最后一个留守的人，回头看向她的工位。往日密密麻麻贴满提醒的便利贴，全部被她亲手撕去。唯独第一章那张泛黄的旧便利贴完好无损：赵东升递的烟别接。'},{type:'narration',text:'而在那张旧便利贴的最上方，她新贴了一张白纸，字迹清淡熟悉。'},{type:'dialogue',text:'新便利贴字迹：咖啡自己冲。我就那三包。'},{type:'narration',text:'一瞬之间你彻骨寒凉：她从第一天开始，就知道自己终有离开的那天。今日的引爆，从来不是突发意外，是她早已知晓、全程配合、亲手完成的终局。'},{type:'thought',text:'如果我当时选了另一个选项，会不会不一样？'},{type:'thought',text:'愧疚的种子，彻底扎根。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十章·工位空位 =====
+ch10_scene1:{tag:'【晨间到岗·第一处空位】',blocks:[{type:'narration',text:'清晨项目部，照常打卡、照常开灯、照常开机。一切流程和往日没有任何区别。你落座的第一秒，身体先于意识做出惯性动作——转头看向左侧工位。'},{type:'narration',text:'阿杰遗留的旧工装还搭在椅背上，平整、落灰、无人认领。旁边的位置，桌椅整洁、物品齐全，却彻底空荡。没有衣物、没有随手摆件、没有半分人气。陈默连一件遗留的私人物品都没有留下。'}],choices:[{label:'先去冲咖啡，复刻往日习惯',nextScene:'ch10_branch1a'},{label:'先开电脑干活，强行切断惯性',nextScene:'ch10_branch1b'}]},
+ch10_branch1a:{tag:'【分支·固守习惯】',blocks:[{type:'narration',text:'你下意识走向茶水间，还是保留着双人份的惯性节奏，走到咖啡机前才猛然回神。'}],choices:[{label:'__auto__',nextScene:'ch10_merge1'}]},
+ch10_branch1b:{tag:'【分支·强行抽离】',blocks:[{type:'narration',text:'你压下转头观望的冲动，直接开机登OA，想用忙碌盖住突如其来的空落。'}],choices:[{label:'__auto__',nextScene:'ch10_merge1'}]},
+ch10_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'习惯可以强行克制，但空缺已经扎根在工位的每一处缝隙里。'}],choices:[{label:'__auto__',nextScene:'ch10_scene2'}]},
+ch10_scene2:{tag:'【团队错位·第二处空位】',blocks:[{type:'narration',text:'刘伟端着四杯咖啡从茶水间出来，指尖稳稳托着托盘，动作熟练如常。他逐一分完咖啡，手里还余下一杯温热的黑咖。脚步下意识停在空工位前，整个人僵了半秒。'},{type:'dialogue',text:'刘伟："习惯了习惯了，手滑多冲一杯，明天铁定改、明天就改。"'}],choices:[{label:'接过咖啡，自己喝完',nextScene:'ch10_branch2a'},{label:'抬手示意放下，空工位留一杯余温',nextScene:'ch10_branch2b'}]},
+ch10_branch2a:{tag:'【分支·自我消化】',blocks:[{type:'narration',text:'你接过咖啡一饮而尽，替所有人吞下这份多余的习惯落差。'}],choices:[{label:'__auto__',nextScene:'ch10_merge2'}]},
+ch10_branch2b:{tag:'【分支·留白存放】',blocks:[{type:'narration',text:'你轻轻摇头，示意他把咖啡放在陈默显示器旁边——那是她每天放咖啡杯的固定位置。'}],choices:[{label:'__auto__',nextScene:'ch10_merge2'}]},
+ch10_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'一杯多余的咖啡，是整个团队最直白的证明：我们都还没适应她不在的日子。'}],choices:[{label:'__auto__',nextScene:'ch10_scene3'}]},
+ch10_scene3:{tag:'【李姐派活·第三处空位】',blocks:[{type:'narration',text:'早会极简收尾，李姐原位派单，语速平稳、分配公允，和平日别无二致。她把原本固定由左侧工位承接的复核工作量，均匀拆分到你和刘伟身上。'},{type:'dialogue',text:'李姐："这批台账你们俩分摊处理，有问题找我。"'},{type:'narration',text:'话音落下，她微微停顿半秒。所有人都清楚，这句话以往的完整结尾是：有问题找我，或者问陈默。今天，她不动声色地咽掉了后半句。'}],choices:[{label:'__auto__',nextScene:'ch10_scene4'}]},
+ch10_scene4:{tag:'【张野结界·第四处空位】',blocks:[{type:'narration',text:'你路过张野工位，习惯性能听见他耳机漏出的声响：大悲咒Remix、技术杂谈、白噪音，永远有东西填满他的结界。但今天，他的耳机是彻底的静默。没有旋律、没有人声、没有杂响，只有一片空白的安静。'},{type:'narration',text:'他不用再靠噪音隔绝周遭，因为往日最鲜活、最嘴碎、最能打破死寂的那个人，已经不在了。无声，比有声更吵闹。'}],choices:[{label:'__auto__',nextScene:'ch10_scene5'}]},
+ch10_scene5:{tag:'【赵东升到访·面具脱落】',blocks:[{type:'narration',text:'上午中段，赵东升第一次踏入项目部，是陈默离场后的首次到访。他彻底变了。没有笑脸、没有客套、没有递烟、没有"自家人多担待"的虚伪话术。往日全套伪善流程尽数消失。'},{type:'narration',text:'他手里拿着的，正是第九章那批数据核查的后续协查工单——彻头彻尾的陈默遗留工作。他明明清楚这份工作的原负责人，却全程一字不提、一瞬不看空工位。'},{type:'dialogue',text:'赵东升："下午两点前，这份协查单给出完整回复。"'},{type:'narration',text:'指令落地，转身就走。他的客气，从来不是给项目部的，只是专门给陈默的。人不在了，体面和伪装，也就没必要留着了。'}],choices:[{label:'__auto__',nextScene:'ch10_scene6'}]},
+ch10_scene6:{tag:'【互动3·直面施压·态度抉择】',blocks:[{type:'narration',text:'这是你第一次独自直面赵东升的公事公办式施压，无人兜底、无人挡枪。'}],choices:[{label:'应声接下，稳妥闭环',nextScene:'ch10_branch3a'},{label:'迟疑一秒，询问工单细节',nextScene:'ch10_branch3b'}]},
+ch10_branch3a:{tag:'【分支·稳妥承接】',blocks:[{type:'narration',text:'你没有多余争辩，直接接下工单，默认承接所有遗留压力。'}],choices:[{label:'__auto__',nextScene:'ch10_merge3'}]},
+ch10_branch3b:{tag:'【分支·谨慎追问】',blocks:[{type:'narration',text:'你短暂迟疑，追问工单核对标准与时限细则，守住新人合规底线。'}],choices:[{label:'__auto__',nextScene:'ch10_merge3'}]},
+ch10_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'无论选择如何，你都清晰意识到：往后所有刀尖，再也无人替你先挡一步。'}],choices:[{label:'__auto__',nextScene:'ch10_scene7'}]},
+ch10_scene7:{tag:'【遗留工单·最后的回响】',blocks:[{type:'narration',text:'你点开陈默未归档的最后一份台账文件。排版规整、数据全核、零错漏、零瑕疵。她把收尾工作做得干干净净，没有半分敷衍。文件备注栏，留着一行她随手敲下的日常字迹。'},{type:'dialogue',text:'备注：数据V3版已核。下次记得查旧档，别只看新推送。附件路径：/财务/周姐/季度凭证/未归档/'},{type:'thought',text:'她明明早就身处局中，明明早已预判风险，却依旧把每一份工作做到极致。这行字不是特意留给我的，可最后偏偏只有我看见了。'}],choices:[{label:'截图留存，存档记忆',nextScene:'ch10_branch4a',itemGain:'chenmo_last_memo'},{label:'看完即关，正常归档',nextScene:'ch10_branch4b'}]},
+ch10_branch4a:{tag:'【分支·私存痕迹】',blocks:[{type:'narration',text:'你悄悄截图保存页面，把这行平淡的叮嘱，私自留作念想。'},{type:'thought',text:'获得道具：陈默末次工单备注记录'}],choices:[{label:'__auto__',nextScene:'ch10_merge4'}]},
+ch10_branch4b:{tag:'【分支·公事归档】',blocks:[{type:'narration',text:'你压下翻涌的情绪，按流程归档文件，假装只是处理一份普通工单。'}],choices:[{label:'__auto__',nextScene:'ch10_merge4'}]},
+ch10_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'流程可以正常走完，但心里的缺口，永远无法归档。'}],choices:[{label:'__auto__',nextScene:'ch10_scene8'}]},
+ch10_scene8:{tag:'【刘伟破防·嘴替式留白】',blocks:[{type:'dialogue',text:'刘伟："默姐以前这种表，都是提前一天就做完的……哦不提了不提了。"'},{type:'narration',text:'他飞快收口、慌忙圆场，越掩饰，越真实。'},{type:'thought',text:'整个部门都在拼命假装正常。假装她只是临时请假，假装明天工位会有人落座，假装我签字的那一刻，什么都没发生过。'},{type:'dialogue',text:'刘伟低头整理手头工单，随口嘟囔了一句："王总今天好像外出开会了，一整天没见着人。"'}],choices:[{label:'__auto__',nextScene:'ch10_scene9'}]},
+ch10_scene9:{tag:'【走廊幻听·第五处空位】',blocks:[{type:'narration',text:'午后走廊传来人声，有人喊出一个陈姓称呼。你条件反射般抬头，目光瞬间望向门口。下一秒才猛然回神——不是她。只是相似的姓氏，相似的呼喊，却精准戳中了你尚未平复的惯性期待。'}],choices:[{label:'__auto__',nextScene:'ch10_scene10'}]},
+ch10_scene10:{tag:'【周姐出场·外部冷流程】',blocks:[{type:'narration',text:'你刚收回望向走廊的目光，周姐恰好从财务部方向走来，脚步不停，语气中立，不带任何情绪。'},{type:'dialogue',text:'周姐："陈默的离职交接单，财务这边已经收到了。"'},{type:'narration',text:'她说完，目光在你脸上停了一瞬，似乎想说什么，但最终只是点了下头，转身走了。项目部还在假装温存，公司流程早已冰冷落地。'}],choices:[{label:'__auto__',nextScene:'ch10_scene11'}]},
+ch10_scene11:{tag:'【互动5·收官离场·最后的等待】',blocks:[{type:'narration',text:'下班时间抵达，全员陆续收拾工位离场。往日你总会习惯性停顿片刻，等左侧工位那人收尾、起身、吐槽下班拥堵。今天，你依旧无意识停了几秒。'}],choices:[{label:'随人流先走，结束今日内耗',nextScene:'ch10_branch5a'},{label:'留守最后，看完工位再走',nextScene:'ch10_branch5b'}]},
+ch10_branch5a:{tag:'【分支·匆匆离场】',blocks:[{type:'narration',text:'你跟着人群快步离开，试图逃离这片满是错位的空位。'}],choices:[{label:'__auto__',nextScene:'ch10_chapter_end'}]},
+ch10_branch5b:{tag:'【分支·静默留守】',blocks:[{type:'narration',text:'你留在最后，安静看着空荡的工位，任由细碎的落差反复侵蚀心绪。'}],choices:[{label:'__auto__',nextScene:'ch10_chapter_end'}]},
+ch10_chapter_end:{tag:'【第十章·结束】',blocks:[{type:'narration',text:'办公室彻底空旷，只剩你一人。你第一次主动抬头，认真看向阿杰那件落灰的旧工装，又望向旁边彻底空置的座椅。左边是旧人遗留的余温，右边是新人离场的空白。中间，是独自撑下所有压力的你。'},{type:'narration',text:'你抬手关灯。工位暗下，走廊灯光次第熄灭。整层楼陷入彻底的寂静。'},{type:'thought',text:'明天还是一样。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十一章·疑点 =====
+ch11_scene1:{tag:'【晨间日常·替代痕迹】',blocks:[{type:'narration',text:'工位区空椅子依旧摆在左侧，阿杰旧工装搭在一旁。你拿便利贴走到刘伟桌面，写下今日核对数据提醒。贴好后，低头盯着自己的字迹停顿两秒。字迹不如陈默的锋利，但功能一样。你想起以前每天到岗时那张已经贴好的便利贴，是陈默提前做的工作。不是理所当然的存在。'}],choices:[{label:'收回目光开工，不再多想字迹差别',nextScene:'ch11_branch1a'},{label:'伸手摸了摸空白显示器边框，想起往日满贴的纸条',nextScene:'ch11_branch1b'}]},
+ch11_branch1a:{tag:'【分支·收敛心绪】',blocks:[{type:'narration',text:'你迅速收回目光，压下心底微妙的落差，点开归档文件夹，专注投入手头的整理工作，刻意不再对比字迹差异。'}],choices:[{label:'__auto__',nextScene:'ch11_merge1'}]},
+ch11_branch1b:{tag:'【分支·触景念旧】',blocks:[{type:'narration',text:'你抬手轻轻触碰冰凉的显示器边框，空荡荡的屏幕上没有一张便利贴，往日密密麻麻的提醒、标注历历在目，指尖停顿片刻才收回。'}],choices:[{label:'__auto__',nextScene:'ch11_merge1'}]},
+ch11_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'短暂停顿后，你收回思绪，回归手头归档任务。'}],choices:[{label:'__auto__',nextScene:'ch11_scene2'}]},
+ch11_scene2:{tag:'【李姐安排·档案整理任务】',blocks:[{type:'dialogue',text:'李姐："陈默遗留纸质台账全部交由你统一归档整理。"'}],choices:[{label:'__auto__',nextScene:'ch11_scene3'}]},
+ch11_scene3:{tag:'【翻查旧档·第一条疑点线索】',blocks:[{type:'narration',text:'逐份翻阅老旧台账，一页纸夹层滑出一张便利贴。字迹清晰，属于陈默。'},{type:'bold',text:'纸面文字：3/12 下午3:15 孙总办公室'},{type:'narration',text:'3月12日，是你入职前一周。'}],choices:[{label:'翻面查看便利贴背面有无补充字迹',nextScene:'ch11_branch2a',itemGain:'chenmo_prehire_note'},{label:'捏在手里反复核对日期与地点文字',nextScene:'ch11_branch2b',itemGain:'chenmo_prehire_note'}]},
+ch11_branch2a:{tag:'【分支·严谨核验】',blocks:[{type:'narration',text:'你立刻将便利贴翻面，仔细检查每一处边角、空白位置，确认背面没有任何隐藏字迹、标注与记号。'}],choices:[{label:'__auto__',nextScene:'ch11_merge2'}]},
+ch11_branch2b:{tag:'【分支·直击疑点】',blocks:[{type:'narration',text:'你攥紧这张薄薄的便利贴，反复比对日期、地点字迹，一次次确认时间线——入职前一周，陈默的目标直指孙总办公室，违和感愈发强烈。'}],choices:[{label:'__auto__',nextScene:'ch11_merge2'}]},
+ch11_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'便利贴背面空白，没有额外记录。心底生出第一个疑问：她入职前便在盯孙总相关事宜。'}],choices:[{label:'__auto__',nextScene:'ch11_scene4'}]},
+ch11_scene4:{tag:'【日常细节·撞见遗留铅笔字迹】',blocks:[{type:'narration',text:'继续翻档，台账侧边留有浅铅笔字批注。'},{type:'dialogue',text:'铅笔备注：数据已核，别再催了'},{type:'narration',text:'看见熟悉笔迹，动作停顿一瞬。'}],choices:[{label:'拍下页面存档留存这条笔迹线索',nextScene:'ch11_branch3a',itemGain:'chenmo_pencil_note'},{label:'合上台账，正常继续整理流程',nextScene:'ch11_branch3b'}]},
+ch11_branch3a:{tag:'【分支·留存凭证】',blocks:[{type:'narration',text:'你拿出手机，对准台账上的铅笔字迹精准拍照，单独存档，将这处细微的笔迹痕迹留存为专属线索。'},{type:'thought',text:'获得道具：陈默旧台账铅笔字迹记录'}],choices:[{label:'__auto__',nextScene:'ch11_merge3'}]},
+ch11_branch3b:{tag:'【分支·常规归档】',blocks:[{type:'narration',text:'你压下心头的触动，没有额外操作，轻轻合上台账封面，按照归档流程依次整理，恪守本职工作。'}],choices:[{label:'__auto__',nextScene:'ch11_merge3'}]},
+ch11_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'线索收好，继续翻阅剩余文件。'}],choices:[{label:'__auto__',nextScene:'ch11_scene5'}]},
+ch11_scene5:{tag:'【移交记录·暗藏时间伏笔】',blocks:[{type:'narration',text:'翻到离职归档清单，备注一行小字。'},{type:'bold',text:'清单备注：全套凭证已移交周姐'},{type:'narration',text:'移交日期，为第九章陷阱触发前一日。'}],choices:[{label:'__auto__',nextScene:'ch11_scene6'}]},
+ch11_scene6:{tag:'【刘伟午休·习惯彻底改变】',blocks:[{type:'narration',text:'午休刘伟端三杯咖啡走出茶水间，径直分给你、李姐、张野。全程没有在空工位前驻足停顿。他已经改掉了四人份的习惯，改成了三人份。适应本身比不适应更让人觉得失落。'}],choices:[{label:'__auto__',nextScene:'ch11_scene7'}]},
+ch11_scene7:{tag:'【下意识动作·转头落空】',blocks:[{type:'narration',text:'核对一组复杂数据，思路卡住。脑袋下意识向左侧转动一半，骤然停住，收回目光。这个动作比看空椅子更疼——不是"她不在"，是"我以为她还在"。'}],choices:[{label:'__auto__',nextScene:'ch11_scene8'}]},
+ch11_scene8:{tag:'【李姐路过·看破不说破】',blocks:[{type:'narration',text:'李姐途经工位，视线扫过你手中的便利贴，目光停顿一秒。你开口发问。'},{type:'dialogue',text:'你："陈默以前是不是一直在暗中查什么事？"'},{type:'dialogue',text:'李姐："陈默的事，她自己会说。她要是不说，就是不想让人知道。"'},{type:'dialogue',text:'李姐："把文件归档吧。归档了就不会丢了。归档的事归你管，别的事归不了你管。"'},{type:'narration',text:'她没有否认，没有确认。但你已经听出了她没有说出口的部分——她知道陈默在查什么，但她不能说。'}],choices:[{label:'默默把便利贴夹进私人笔记本收好',nextScene:'ch11_branch4a'},{label:'暂时夹在当前台账里，统一最后归档',nextScene:'ch11_branch4b'}]},
+ch11_branch4a:{tag:'【分支·私藏线索】',blocks:[{type:'narration',text:'你没有将便利贴归入公务档案，而是悄悄折叠好，夹进自己的私人笔记本深处，将这处疑点私自留存，不对外公开。'}],choices:[{label:'__auto__',nextScene:'ch11_merge4'}]},
+ch11_branch4b:{tag:'【分支·公务归档】',blocks:[{type:'narration',text:'你遵从李姐的叮嘱，将便利贴原位夹回台账夹层，随整套公务文件统一归档，不私自留存任何疑点线索。'}],choices:[{label:'__auto__',nextScene:'ch11_merge4'}]},
+ch11_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'文件安置妥当，李姐静静看了你一眼，转身离开工位区。'}],choices:[{label:'__auto__',nextScene:'ch11_scene9'}]},
+ch11_scene9:{tag:'【赵东升到访·假意套话警告】',blocks:[{type:'narration',text:'下午赵东升前来取部门存档文件，看见你持续翻阅老旧档案。'},{type:'dialogue',text:'赵东升："最近怎么老翻旧东西？有找不到的记录？"'},{type:'dialogue',text:'你："整理陈默遗留档案，统一归档。"'},{type:'narration',text:'赵东升轻轻点头，转身前补一句提醒。'},{type:'dialogue',text:'赵东升："有什么问题直接问我就行，不用翻来翻去。"'}],choices:[{label:'应声点头，表面顺从不再深挖旧档',nextScene:'ch11_branch5a'},{label:'只淡淡回应，手上翻档动作没有停下',nextScene:'ch11_branch5b',itemGain:'zhao_probe_record'}]},
+ch11_branch5a:{tag:'【分支·顺势顺从】',blocks:[{type:'narration',text:'你闻言立刻点头应声，表面全然接受对方好意，收敛翻查旧档的动作，装作不再深究过往记录。'}],choices:[{label:'__auto__',nextScene:'ch11_merge5'}]},
+ch11_branch5b:{tag:'【分支·暗自坚持】',blocks:[{type:'narration',text:'你淡淡应声回应，不做多余辩解，手上翻阅旧台账的动作丝毫未停，无声对抗对方的警告试探。'},{type:'thought',text:'获得道具：赵东升套话警告对话记录'}],choices:[{label:'__auto__',nextScene:'ch11_merge5'}]},
+ch11_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'赵东升看了你一眼，没再多言，拿完文件转身离开。第十一章是随口套话，但你清晰感知——你的调查动作，已经被上层紧盯。'}],choices:[{label:'__auto__',nextScene:'ch11_scene10'}]},
+ch11_scene10:{tag:'【收尾时段·联络王总求证】',blocks:[{type:'narration',text:'全天档案整理完毕，便利贴妥善收在私人笔记本内。抬头看向左侧空置工位，再望向一旁落灰的阿杰工装。'}],choices:[{label:'编辑消息发送：有时间吗？想问你一件事',nextScene:'ch11_branch6a'},{label:'暂时搁置，次日再找机会联系王总',nextScene:'ch11_branch6b'}]},
+ch11_branch6a:{tag:'【分支·主动发信】',blocks:[{type:'narration',text:'消息发送完成。页面停留。没有回复。'}],choices:[{label:'__auto__',nextScene:'ch11_chapter_end'}]},
+ch11_branch6b:{tag:'【分支·延后问询】',blocks:[{type:'narration',text:'收起手机，决定次日再寻找合适时机向王总求证疑点。'}],choices:[{label:'__auto__',nextScene:'ch11_chapter_end'}]},
+ch11_chapter_end:{tag:'【第十一章·结束】',blocks:[{type:'narration',text:'全天工作结束，心底困惑盖过往日悲伤，愧疚混杂未知不安。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十二章·调查 =====
+ch12_scene1:{tag:'【晨间到岗·习惯彻底适应】',blocks:[{type:'narration',text:'清晨工位区。左侧空工位依旧空置，阿杰旧工装搭在椅上。你落座，没有停顿，没有下意识转头，直接开机登录系统。往日的落空惯性，已经消退。'}],choices:[{label:'优先处理当日本职工作',nextScene:'ch12_branch1a'},{label:'优先打开OA，尝试核查旧日志',nextScene:'ch12_branch1b'}]},
+ch12_branch1a:{tag:'【分支·稳妥先行】',blocks:[{type:'narration',text:'你先点开待办台账，规整好当日工作，稳住本职节奏，再伺机开展私下核查。'}],choices:[{label:'__auto__',nextScene:'ch12_merge1'}]},
+ch12_branch1b:{tag:'【分支·直奔疑点】',blocks:[{type:'narration',text:'你跳过常规开工流程，直接打开OA系统，目标明确，第一时间查找陈默历史操作记录。'}],choices:[{label:'__auto__',nextScene:'ch12_merge1'}]},
+ch12_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'页面调出陈默个人工作日志列表。大部分条目后方统一标注：日志已清理。可查看记录仅剩公共流程台账，无任何私人操作痕迹。'}],choices:[{label:'__auto__',nextScene:'ch12_scene2'}]},
+ch12_scene2:{tag:'【日志疑点·针对性清理】',blocks:[{type:'narration',text:'你点开日志清理记录。清理操作时间，集中在第九章事件结束后。并非月度常规清理，也非离职统一归档清理。是针对性、定点清除。'}],choices:[{label:'截图保存清理时间记录',nextScene:'ch12_branch2a',itemGain:'oa_log_clean_screenshot'},{label:'默默记下时间点，关闭页面',nextScene:'ch12_branch2b'}]},
+ch12_branch2a:{tag:'【分支·留存凭证】',blocks:[{type:'narration',text:'你精准截取日志清理界面，将第九章后的批量清理记录存档，固化证据。'},{type:'thought',text:'获得道具：OA针对性日志清理截屏'}],choices:[{label:'__auto__',nextScene:'ch12_merge2'}]},
+ch12_branch2b:{tag:'【分支·暗记于心】',blocks:[{type:'narration',text:'你没有留存截图，只牢牢记住这个反常的时间节点，页面关闭，不露声色。'}],choices:[{label:'__auto__',nextScene:'ch12_merge2'}]},
+ch12_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'你确认第一件事：有人在刻意抹除陈默离职前的操作痕迹。'}],choices:[{label:'__auto__',nextScene:'ch12_scene3'}]},
+ch12_scene3:{tag:'【第一层碰壁·监控访客记录受限】',blocks:[{type:'narration',text:'你以归档核对时间线为由，咨询安保后台。安保回复：3月12日楼层访客记录已过期覆盖。办公区监控调取，需孙总专项审批。审批流程仅限管理层发起，基层无权限申请。'}],choices:[{label:'放弃监控渠道，转向其他线索',nextScene:'ch12_branch3a'},{label:'尝试提交权限申请',nextScene:'ch12_branch3b'}]},
+ch12_branch3a:{tag:'【分支·理性止损】',blocks:[{type:'narration',text:'你瞬间明白这是死胡同，不再浪费时间，直接挂断咨询，转换调查方向。'}],choices:[{label:'__auto__',nextScene:'ch12_merge3'}]},
+ch12_branch3b:{tag:'【分支·试探流程】',blocks:[{type:'narration',text:'你点开审批入口，点击申请调取记录，页面即刻弹窗：权限不足、无法发起。'}],choices:[{label:'__auto__',nextScene:'ch12_merge3'}]},
+ch12_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'你确认第二件事：公开制度渠道，全面锁死。查不到，是有人不想让你查到。'}],choices:[{label:'__auto__',nextScene:'ch12_scene4'}]},
+ch12_scene4:{tag:'【第二层线索·试探周姐】',blocks:[{type:'narration',text:'你以财务核销归档为由，前往财务部对接周姐。'},{type:'dialogue',text:'你："陈默离职前移交的归档清单，是否全部完整入库？"'},{type:'dialogue',text:'周姐："收到了。移交日期是你们部门上次考核风波前一天，全套凭证齐全。"'},{type:'dialogue',text:'你："她之前是否频繁调取过特殊归档记录？"'},{type:'narration',text:'周姐动作停顿半秒，语气依旧中立。'},{type:'dialogue',text:'周姐："她调过一些报销凭证。具体内容归档了，你可以自己翻翻看。"'}],choices:[{label:'道谢离场，计划后续翻查归档文件',nextScene:'ch12_branch4a',itemGain:'zhoujie_blank_record'},{label:'顺势追问具体文件夹位置',nextScene:'ch12_branch4b'}]},
+ch12_branch4a:{tag:'【分支·隐忍蓄力】',blocks:[{type:'narration',text:'你点头道谢，不再多问，清楚周姐的边界，默默记下报销凭证这条关键线索。'},{type:'thought',text:'获得道具：周姐留白对话记录'}],choices:[{label:'__auto__',nextScene:'ch12_merge4'}]},
+ch12_branch4b:{tag:'【分支·顺势深挖】',blocks:[{type:'narration',text:'你顺势询问归档路径，周姐只摇头：按流程检索，不单独告知位置。规则之内，绝不破例。'}],choices:[{label:'__auto__',nextScene:'ch12_merge4'}]},
+ch12_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'你确认第三件事：陈默离职前，确实在刻意核查报销类凭证。周姐知情，但恪守中立、不点破、不拦阻。'}],choices:[{label:'__auto__',nextScene:'ch12_scene5'}]},
+ch12_scene5:{tag:'【张野短句·唯一坦白】',blocks:[{type:'narration',text:'你返回工位翻查旧档，张野路过，驻足看了你两秒。'},{type:'dialogue',text:'你："你知不知道陈默之前在查什么？"'},{type:'dialogue',text:'张野："她让我别问。"'},{type:'narration',text:'说完，张野径直回位戴回耳机，不再多言。'}],choices:[{label:'__auto__',nextScene:'ch12_scene6'}]},
+ch12_scene6:{tag:'【第三层碰壁·人际全员留白】',blocks:[{type:'narration',text:'李姐不说破。周姐只给口子不交底。张野知情但被提前叮嘱。所有人都知道有事发生，所有人都选择闭口不谈。'}],choices:[{label:'__auto__',nextScene:'ch12_scene7'}]},
+ch12_scene7:{tag:'【职场承接·你变成了她】',blocks:[{type:'narration',text:'跨部门需求推送至你工位，内容模糊、边界不清、限时当日回复。以往此类扯皮需求，都是陈默先行筛审、挡下模糊漏洞。今日无人兜底。你逐条核对，标注三处需求漏洞，原路退回。'},{type:'dialogue',text:'你："需求不明确，请补充细则后重新推送。"'},{type:'narration',text:'一旁刘伟看完全程，低声感慨。'},{type:'dialogue',text:'刘伟："你刚才说话的样子，有点像陈默。"'},{type:'narration',text:'你没有回应。'}],choices:[{label:'__auto__',nextScene:'ch12_scene8'}]},
+ch12_scene8:{tag:'【赵东升升级施压·刻意路过警告】',blocks:[{type:'narration',text:'下午，赵东升空手走入项目部，并非取件，只是路过巡查。目光落在你手边的旧台账上。'},{type:'dialogue',text:'赵东升："还在整理？陈默的东西真不少。"'},{type:'dialogue',text:'你："收尾归档，清理遗留台账。"'},{type:'dialogue',text:'赵东升："有些东西归档就行了，不用细看。细看看不出花来。"'},{type:'narration',text:'话音落下，不等你回应，转身径直离开。'}],choices:[{label:'暂时收起旧档，切换常规工作',nextScene:'ch12_branch5a'},{label:'无视警告，继续翻查归档台账',nextScene:'ch12_branch5b',itemGain:'zhao_double_warning'}]},
+ch12_branch5a:{tag:'【分支·暂时蛰伏】',blocks:[{type:'narration',text:'你合上台账，切换日常工作页面，表面顺从收敛，规避当面施压风险。'}],choices:[{label:'__auto__',nextScene:'ch12_merge5'}]},
+ch12_branch5b:{tag:'【分支·刚性坚持】',blocks:[{type:'narration',text:'你无动于衷，指尖继续翻查文件，用沉默回应对方的刻意警告。'},{type:'thought',text:'获得道具：赵东升双次警告对话记录'}],choices:[{label:'__auto__',nextScene:'ch12_merge5'}]},
+ch12_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'你清晰感知：第十一章是随口套话，本章是明确传话。你的调查动作，已经被上层紧盯。'}],choices:[{label:'__auto__',nextScene:'ch12_scene9'}]},
+ch12_scene9:{tag:'【章末沉淀·疑点落笔】',blocks:[{type:'narration',text:'下班前，你拿出私人笔记本，翻至空白页。'}],choices:[{label:'写下两大核心疑问',nextScene:'ch12_branch6a'},{label:'写下三大追查方向',nextScene:'ch12_branch6b'}]},
+ch12_branch6a:{tag:'【分支·聚焦疑点】',blocks:[{type:'narration',text:'笔尖落下：1. 3月12日，陈默入职前进入孙总办公室的目的。2. 针对性清理日志的人是谁。'}],choices:[{label:'__auto__',nextScene:'ch12_chapter_end'}]},
+ch12_branch6b:{tag:'【分支·锚定方向】',blocks:[{type:'narration',text:'笔尖落下：1. 核查归档报销凭证。2. 追溯日志清理权限。3. 求证孙总审批锁死的原因。'}],choices:[{label:'__auto__',nextScene:'ch12_chapter_end'}]},
+ch12_chapter_end:{tag:'【第十二章·结束】',blocks:[{type:'narration',text:'你合上笔记本，抬眼望向空工位与落灰的旧工装。屏幕亮起。'},{type:'bold',text:'王总：明天中午，天台。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十三章·察觉 =====
+ch13_scene1:{tag:'【午间前置·细节递进】',blocks:[{type:'narration',text:'午休时段，工位区安静松弛。刘伟端着两杯咖啡走近，递来一杯，目光在你脸上停顿半秒。'},{type:'dialogue',text:'刘伟："你今天不说话的样子，也像陈默了。"'},{type:'narration',text:'你没有回应。'}],choices:[{label:'低头接杯，默认不语',nextScene:'ch13_branch1a'},{label:'抬眼摇头，轻否认',nextScene:'ch13_branch1b'}]},
+ch13_branch1a:{tag:'【分支·沉默承接】',blocks:[{type:'narration',text:'你抬手接过咖啡，指尖触到温热杯壁，全程沉默，未做任何辩解。'}],choices:[{label:'__auto__',nextScene:'ch13_merge1'}]},
+ch13_branch1b:{tag:'【分支·轻微反驳】',blocks:[{type:'narration',text:'你抬眼看向刘伟，轻轻摇头，没有多余话语，只简单否定评价。'}],choices:[{label:'__auto__',nextScene:'ch13_merge1'}]},
+ch13_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'刘伟笑了笑，端着咖啡返回工位，不再多言。'}],choices:[{label:'__auto__',nextScene:'ch13_scene2'}]},
+ch13_scene2:{tag:'【天台赴约·场景复现】',blocks:[{type:'narration',text:'天台风口开阔，风卷着楼宇杂音掠过。王总早已站在栏杆边，背对通道，姿态松弛。第一章的偶遇是碰巧，这一次，是刻意等候。'}],choices:[{label:'主动开口，率先提问',nextScene:'ch13_branch2a'},{label:'安静站立，等对方先开口',nextScene:'ch13_branch2b'}]},
+ch13_branch2a:{tag:'【分支·主动求证】',blocks:[{type:'narration',text:'你走近两步，直接开口，直奔核心疑点。'}],choices:[{label:'__auto__',nextScene:'ch13_merge2'}]},
+ch13_branch2b:{tag:'【分支·静待主导】',blocks:[{type:'narration',text:'你停在原地，安静伫立，把对话主动权交给王总。'}],choices:[{label:'__auto__',nextScene:'ch13_merge2'}]},
+ch13_merge2:{tag:'【汇合·王总指路】',blocks:[{type:'narration',text:'王总闻声转身，目光平静落在你身上。'},{type:'dialogue',text:'王总："还在查？"'},{type:'narration',text:'不等你答复，他接续开口。'},{type:'dialogue',text:'王总："有些事不是不告诉你，是告诉你的时机不对。"'},{type:'dialogue',text:'王总："你坐的那个工位，以前也坐过一个人。他也查过，没查完。"'},{type:'dialogue',text:'你："陈默3月12日下午三点十五分，去孙总办公室做什么？"'},{type:'dialogue',text:'王总："你想查的事，陈默已经查过一遍了。她查到哪一步，你自己去找。"'},{type:'dialogue',text:'你："为什么不能直接告诉我？"'},{type:'dialogue',text:'王总："我说了，你就得替我作证。你现在还不能替我作证。"'},{type:'narration',text:'短暂停顿，他给出唯一突破口。'},{type:'dialogue',text:'王总："报销凭证那边有东西。看完别声张。"'},{type:'narration',text:'话音落地，王总侧身擦肩而过，独自离开天台。全程无揭秘，只指路。'}],choices:[{label:'__auto__',nextScene:'ch13_scene3'}]},
+ch13_scene3:{tag:'【午后查档·突破入口】',blocks:[{type:'narration',text:'你返回办公区，依照周姐此前留的规则口子，进入归档文件检索界面。筛选陈默离职前移交的全套财务凭证，逐份翻阅。'}],choices:[{label:'常规翻阅，逐份比对记录',nextScene:'ch13_branch3a'},{label:'调取遗留录音，交叉比对数据',nextScene:'ch13_branch3b',consumeItem:'meeting_recording'}]},
+ch13_branch3a:{tag:'【分支·常规核查】',blocks:[{type:'narration',text:'你匀速翻阅归档文件，专注比对每一笔流转记录，耐心排查异常。'}],choices:[{label:'__auto__',nextScene:'ch13_merge3'}]},
+ch13_branch3b:{tag:'【分支·交叉核验】',blocks:[{type:'narration',text:'你调出顺延多章的会议重点录音。孙总在某次全员会上说过——"所有跨部门项目报销，均有合规业务背景，经我本人签字确认。"你将这句话与凭证上的异常流转路径交叉比对，口头承诺与资金实况，完全矛盾。快速锁定异常条目。'},{type:'thought',text:'道具消耗：会议重点录音【已销毁】'}],choices:[{label:'__auto__',nextScene:'ch13_merge3'}]},
+ch13_merge3:{tag:'【汇合·疑点落地】',blocks:[{type:'narration',text:'一份竞品部项目报销凭证停在你眼前。流转路径清晰异常：项目经费出库→外部咨询中转→私人账户收尾。单据终审签字栏，落款：孙总。凭证扉页角落，有一枚极淡的铅笔浅痕，是陈默惯用的标记笔迹。'},{type:'narration',text:'第十一章的便利贴疑点，此刻闭环落地。陈默入职前紧盯孙总办公室，不是针对人事、不是针对工作矛盾。她从一开始，就在查资金流转异常。'}],choices:[{label:'__auto__',nextScene:'ch13_scene4'}]},
+ch13_scene4:{tag:'【互动4·异常凭证处置】',blocks:[{type:'narration',text:'面对这份陈默标记过的异常凭证，你如何处置？'}],choices:[{label:'截图留存异常流转记录',nextScene:'ch13_branch4a',itemGain:'abnormal_fund_record'},{label:'默记信息，原位归档不留痕迹',nextScene:'ch13_branch4b'}]},
+ch13_branch4a:{tag:'【分支·留存证据】',blocks:[{type:'narration',text:'你精准截取凭证页面，保存孙总签字与异常流转路径，固化核心线索。'},{type:'thought',text:'获得道具：竞品部异常资金流转记录'}],choices:[{label:'__auto__',nextScene:'ch13_merge4'}]},
+ch13_branch4b:{tag:'【分支·无痕探查】',blocks:[{type:'narration',text:'你没有留存任何截图，默默记下所有关键信息，将凭证原位归回，杜绝任何探查痕迹。'}],choices:[{label:'__auto__',nextScene:'ch13_merge4'}]},
+ch13_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'你合上归档文件夹，结束核查，返回工位。'}],choices:[{label:'__auto__',nextScene:'ch13_scene5'}]},
+ch13_scene5:{tag:'【系统封路·权限精准降级】',blocks:[{type:'narration',text:'你再次打开OA归档目录，尝试调取同类财务凭证存档。页面弹出提示：权限不足。点开个人权限日志，权限变更记录清晰。今日、凭证核查结束后一小时内，系统权限自动变更。归档文件查阅权限，从部门级降级为个人级。'}],choices:[{label:'截图保存权限降级日志',nextScene:'ch13_branch5a',itemGain:'oa_permission_downgrade'},{label:'关闭页面，不动声色无视变更',nextScene:'ch13_branch5b'}]},
+ch13_branch5a:{tag:'【分支·留存封路证据】',blocks:[{type:'narration',text:'你截取权限降级时间、变更条目，完整留存对方针对性封路的实证。'},{type:'thought',text:'获得道具：OA权限降级日志截屏'}],choices:[{label:'__auto__',nextScene:'ch13_merge5'}]},
+ch13_branch5b:{tag:'【分支·隐忍蛰伏】',blocks:[{type:'narration',text:'你看完变更记录，直接关闭页面，全程无任何操作，不露破绽。'}],choices:[{label:'__auto__',nextScene:'ch13_merge5'}]},
+ch13_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'你确认核心现状：对方不是事前拦截，是实时监控、看完即封。你的每一步探查，都在视线之内。'}],choices:[{label:'__auto__',nextScene:'ch13_scene6'}]},
+ch13_scene6:{tag:'【孤立无援·伏笔回收】',blocks:[{type:'narration',text:'技术权限被封，你下意识转头看向张野工位。张野戴着耳机，姿态静默，隔绝所有周遭声响。脑海闪过两段伏笔：第一章他莫名被约谈、第十二章他那句「她让我别问」。'}],choices:[{label:'起身开口，尝试询问张野',nextScene:'ch13_branch6a'},{label:'收回目光，放弃求助',nextScene:'ch13_branch6b'}]},
+ch13_branch6a:{tag:'【分支·尝试试探】',blocks:[{type:'narration',text:'你微微起身，视线落在张野身上，最终还是停顿止步。你清晰知晓，开口即是连累，陈默当年的叮嘱，是在护他。'}],choices:[{label:'__auto__',nextScene:'ch13_merge6'}]},
+ch13_branch6b:{tag:'【分支·主动回避】',blocks:[{type:'narration',text:'你直接收回目光，彻底压下求助念头，主动避开唯一的技术支援，选择独自承压。'}],choices:[{label:'__auto__',nextScene:'ch13_merge6'}]},
+ch13_merge6:{tag:'【汇合】',blocks:[{type:'narration',text:'你彻底确认当下处境：无人可问、无人可帮、无路可直查。'}],choices:[{label:'__auto__',nextScene:'ch13_chapter_end'}]},
+ch13_chapter_end:{tag:'【第十三章·结束】',blocks:[{type:'narration',text:'你翻开私人笔记本，落笔写下两条确认。一、陈默全程在查孙总签字的异常资金流转。二、对方实时监控，针对性封死调查路径。笔尖停顿，落下本章最终决意。'},{type:'bold',text:'换个方式查。'},{type:'narration',text:'手边文件堆叠过多，你抬手将多余卷宗随手放在陈默空置工位的桌面。左侧空工位堆放着文件，一旁阿杰的旧工装静静搭在椅上。张野始终低头静坐，全程未抬头。手机无新消息，天台那句「你现在还不能替我作证」在脑海回荡。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十四章·封路 =====
+ch14_scene1:{tag:'【晨间开篇·全域新规落地】',blocks:[{type:'narration',text:'上午九点，公司OA弹出全员置顶公告，孙总签发。标题：《关于优化跨部门协作及档案查阅流程的通知》。核心条款：所有跨部门电子归档文件查阅，需部门负责人+分管领导双签审批。项目部档案查阅权限，暂由赵东升代管审批。'},{type:'narration',text:'李姐点开公告，快速浏览完毕，页面关闭。'},{type:'dialogue',text:'李姐："以后查归档资料，先走正式流程。"'}],choices:[{label:'点开细则，逐字核对条款范围',nextScene:'ch14_branch1a'},{label:'暂时搁置页面，正常开启当日工作',nextScene:'ch14_branch1b'}]},
+ch14_branch1a:{tag:'【分支·深究规则】',blocks:[{type:'narration',text:'你拖动页面，逐条研读新规细则，重点标注管辖范围与权限边界，不放过任何漏洞。'}],choices:[{label:'__auto__',nextScene:'ch14_merge1'}]},
+ch14_branch1b:{tag:'【分支·低调蛰伏】',blocks:[{type:'narration',text:'你简单扫读公告核心内容，不点细则、不做停留，快速切回工作页面，全程低调不露异动。'}],choices:[{label:'__auto__',nextScene:'ch14_merge1'}]},
+ch14_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'新规全文锁定电子归档、OA留档文件，无任何文字提及财务部纸质原始凭证。'}],choices:[{label:'__auto__',nextScene:'ch14_scene2'}]},
+ch14_scene2:{tag:'【午后变动·赵东升入驻项目部】',blocks:[{type:'narration',text:'下午工位调整，赵东升搬入项目部办公区。他未选择陈默空置工位，落座于陈默工位旁空置位置，与你直线距离两米。摆放电脑、整理文具，动作从容自然。'},{type:'dialogue',text:'赵东升："以后我这边常驻办公，工作上有需要尽管说。"'}],choices:[{label:'__auto__',nextScene:'ch14_scene3'}]},
+ch14_scene3:{tag:'【日常细节·氛围彻底转变】',blocks:[{type:'narration',text:'赵东升落座后，项目部闲聊声、细碎交流全部消失。他起身倒水，经过你工位时脚步放慢，目光扫过你的屏幕。没有停，没有说话。走过去，坐下。午休时段，刘伟取出一次性纸杯，独自接水冲泡咖啡。延续多章的三人分咖啡仪式，彻底终止。'}],choices:[{label:'余光留意，不动声色继续工作',nextScene:'ch14_branch2a'},{label:'抬眼扫视一圈办公区布局变化',nextScene:'ch14_branch2b'}]},
+ch14_branch2a:{tag:'【分支·隐忍克制】',blocks:[{type:'narration',text:'你全程专注屏幕，仅用余光感知周遭变动，无任何多余动作与视线。'}],choices:[{label:'__auto__',nextScene:'ch14_merge2'}]},
+ch14_branch2b:{tag:'【分支·全局审视】',blocks:[{type:'narration',text:'你抬眼扫过全场，清晰确认：赵东升落座后，整个办公区的气场、节奏、氛围全部被改写。'}],choices:[{label:'__auto__',nextScene:'ch14_merge2'}]},
+ch14_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'两米距离，无死角视野。你此前堆放在陈默空工位的文件，被赵东升顺手整理平整，整齐堆叠在桌角。无告知、无询问，动作客气自然，却彻底侵占了这片空位的专属感。'}],choices:[{label:'__auto__',nextScene:'ch14_scene4'}]},
+ch14_scene4:{tag:'【匿名警告·未知施压】',blocks:[{type:'narration',text:'OA站内弹出临时消息提醒。发件人：系统禁用账号，无法查看信息、无法回复、无法追溯。'},{type:'bold',text:'消息内容：别再查了。下次不是降权限。'},{type:'narration',text:'消息弹出数秒后，发件账号状态同步更新：已永久禁用。'}],choices:[{label:'立刻截图留存消息记录',nextScene:'ch14_branch3a',itemGain:'anonymous_warning'},{label:'看完直接关闭弹窗，清空未读提示',nextScene:'ch14_branch3b'}]},
+ch14_branch3a:{tag:'【分支·留存证据】',blocks:[{type:'narration',text:'你快速截取消息界面，完整留存匿名警告内容与禁用账号状态，锁定未知威胁线索。'},{type:'thought',text:'获得道具：匿名OA警告消息截屏'}],choices:[{label:'__auto__',nextScene:'ch14_merge3'}]},
+ch14_branch3b:{tag:'【分支·无痕处理】',blocks:[{type:'narration',text:'你看完警告内容，直接关闭弹窗，清空所有痕迹，避免留下任何被核查的记录。'}],choices:[{label:'__auto__',nextScene:'ch14_merge3'}]},
+ch14_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'无署名、无来源、无痕迹。你无法判定这是恶意警告，还是暗中提醒。办公室内，另有未知之人知晓你的所有探查动作。'}],choices:[{label:'__auto__',nextScene:'ch14_scene5'}]},
+ch14_scene5:{tag:'【寻找裂缝·锁定纸质凭证漏洞】',blocks:[{type:'narration',text:'你重新对照新规细则与公司财务制度。电子归档、OA留档已被双签锁死，彻底无探查空间。财务原始纸质凭证，按审计制度必须长期留存，不归本次新规管辖。第十三章周姐留存的报销凭证入口，纸质原件仍封存于财务部档案柜。封路封尽了电子渠道，唯独漏掉了纸质存档。'}],choices:[{label:'默记纸质凭证漏洞，等待时机',nextScene:'ch14_branch4a'},{label:'标注制度条款，留存规则依据',nextScene:'ch14_branch4b',itemGain:'sun_new_rule_loophole'}]},
+ch14_branch4a:{tag:'【分支·暗蓄时机】',blocks:[{type:'narration',text:'你将这条唯一裂缝牢牢记在心里，不做任何纸面记录，静待合适的探查时机。'}],choices:[{label:'__auto__',nextScene:'ch14_merge4'}]},
+ch14_branch4b:{tag:'【分支·固化依据】',blocks:[{type:'narration',text:'你截图留存财务制度条款与新规细则对比，明确纸质凭证的合规查阅空间，固化突破口依据。'},{type:'thought',text:'获得道具：孙总新规全文+纸质凭证漏洞标注'}],choices:[{label:'__auto__',nextScene:'ch14_merge4'}]},
+ch14_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'你确认：孙总全力封死所有明线探查渠道，却被动暴露了最关键的暗线入口。封路，封错了门。'}],choices:[{label:'__auto__',nextScene:'ch14_scene6'}]},
+ch14_scene6:{tag:'【试探通路·借报销掩护进场】',blocks:[{type:'narration',text:'你取出常规报销核销单，整理完毕，起身准备前往财务部。两米外的赵东升抬头，视线精准落在你身上。'},{type:'dialogue',text:'赵东升："去财务？"'},{type:'dialogue',text:'你："核销本月常规报销单据。"'},{type:'dialogue',text:'赵东升："报销找周姐直接签就行，不用绕。"'}],choices:[{label:'点头应声，低调离场',nextScene:'ch14_branch5a'},{label:'简单应答，不多赘述',nextScene:'ch14_branch5b'}]},
+ch14_branch5a:{tag:'【分支·顺从回应】',blocks:[{type:'narration',text:'你轻轻点头，默认对方说辞，手持单据安静离开工位，不产生任何多余交流。'}],choices:[{label:'__auto__',nextScene:'ch14_merge5'}]},
+ch14_branch5b:{tag:'【分支·简洁回应】',blocks:[{type:'narration',text:'你简单应声答复，无多余解释，径直迈步走向财务部，态度平和疏离。'}],choices:[{label:'__auto__',nextScene:'ch14_merge5'}]},
+ch14_merge5:{tag:'【汇合·财务部试探】',blocks:[{type:'narration',text:'你抵达财务部，周姐正常对接报销流程，依规核销签字。全程流程合规、无异常、无阻拦。你未借机探查旧档，仅完成本职工作。此行唯一目的：确认——报销，是进入财务部最合理、无破绽的永久掩护。'}],choices:[{label:'__auto__',nextScene:'ch14_scene7'}]},
+ch14_scene7:{tag:'【互动6·章末落笔定方向】',blocks:[{type:'narration',text:'回到工位，你翻开私人笔记本。'}],choices:[{label:'笔记本写下：纸质',nextScene:'ch14_branch6a'},{label:'笔记本写下：财务',nextScene:'ch14_branch6b'}]},
+ch14_branch6a:{tag:'【分支·精准锚点】',blocks:[{type:'narration',text:'你翻开私人笔记本，落笔二字，精准锁定下一章核心探查目标。'}],choices:[{label:'__auto__',nextScene:'ch14_chapter_end'}]},
+ch14_branch6b:{tag:'【分支·范围锚点】',blocks:[{type:'narration',text:'你笔尖落下，标注核心探查范围，明确后续行动阵地。'}],choices:[{label:'__auto__',nextScene:'ch14_chapter_end'}]},
+ch14_chapter_end:{tag:'【第十四章·结束】',blocks:[{type:'narration',text:'傍晚下班，赵东升收拾工位，语气平和。'},{type:'dialogue',text:'赵东升："明天见。"'},{type:'narration',text:'他率先离开项目部。办公区彻底安静，只剩你一人。陈默空工位上的文件被整理得整齐规整，彻底褪去旧日主人的痕迹。一旁阿杰的旧工装静静搭在椅背上，绳结褪色。无人发消息、无人天台约谈、无人指引方向。'},{type:'thought',text:'严密封锁之下，唯一的裂缝已经找到。明天监视依旧在场，行动必须提前。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十五章·底牌 =====
+ch15_scene1:{tag:'【上午值守·监视常态】',blocks:[{type:'narration',text:'整个上午，项目部氛围紧绷。赵东升落座两米开外，全程在岗，正常处理工作，无多余动作，却牢牢锁住整片工位区视野。全员静默办公，无人闲聊，无人走动。'}],choices:[{label:'专注本职，全程低调蛰伏',nextScene:'ch15_branch1a'},{label:'余光观察赵东升动向，伺机等待',nextScene:'ch15_branch1b'}]},
+ch15_branch1a:{tag:'【分支·沉稳蛰伏】',blocks:[{type:'narration',text:'你埋头处理日常工作，屏幕页面固定本职内容，无任何异动，彻底隐藏探查意图。'}],choices:[{label:'__auto__',nextScene:'ch15_merge1'}]},
+ch15_branch1b:{tag:'【分支·伺机观望】',blocks:[{type:'narration',text:'你一边完成手头工作，一边时刻留意赵东升的动作与手机动静，等待离场窗口期。'}],choices:[{label:'__auto__',nextScene:'ch15_merge1'}]},
+ch15_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'时间稳步推进，十点半，赵东升手机震动。他拿起手机看了一眼，起身收拾桌面文件。'},{type:'dialogue',text:'赵东升："去开个短会，有事找李姐。"'},{type:'narration',text:'话音落下，径直离开项目部。'}],choices:[{label:'__auto__',nextScene:'ch15_scene2'}]},
+ch15_scene2:{tag:'【短暂松弛·环境细节变化】',blocks:[{type:'narration',text:'赵东升离场瞬间，工位区紧绷的空气骤然松动。刘伟抬手拿起搁置多日的马克杯，接水喝水，全程沉默，未发一言。松弛只是片刻，无人敢打破沉寂，被压抑的氛围早已固化。'}],choices:[{label:'等待五分钟，确认无折返可能再行动',nextScene:'ch15_branch2a'},{label:'即刻起身，抓住短暂空档出发',nextScene:'ch15_branch2b'}]},
+ch15_branch2a:{tag:'【分支·谨慎稳妥】',blocks:[{type:'narration',text:'你压下急切心态，静坐等待五分钟，确认走廊无脚步声、无折返动静，彻底锁死安全窗口。'}],choices:[{label:'__auto__',nextScene:'ch15_merge2'}]},
+ch15_branch2b:{tag:'【分支·果断行动】',blocks:[{type:'narration',text:'你不再迟疑，抓起提前备好的报销单据，立刻起身，抢抓最短探查窗口。'}],choices:[{label:'__auto__',nextScene:'ch15_merge2'}]},
+ch15_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'你手持报销单，迈步前往财务部，以常规核销工作为唯一掩护。'}],choices:[{label:'__auto__',nextScene:'ch15_scene3'}]},
+ch15_scene3:{tag:'【财务部·规则留痕】',blocks:[{type:'narration',text:'财务部安静规整，周姐端坐工位。她接过你的报销单据，指尖扫过单据页面。'},{type:'dialogue',text:'你："本次报销金额需要核对往期标准，想查阅一下往期归档的原始凭证。"'},{type:'narration',text:'周姐抬眼看向你，目光平静，不拆穿、不追问。她抽出一张《财务档案查阅登记表》，推至你面前。'},{type:'dialogue',text:'周姐："纸质凭证查阅需要登记。填表，签字，注明查阅事由。"'}],choices:[{label:'如实填写工作核对事由，规范签字留痕',nextScene:'ch15_branch3a',itemGain:'finance_register_record'},{label:'简洁填写事由，快速完成登记',nextScene:'ch15_branch3b',itemGain:'finance_register_record'}]},
+ch15_branch3a:{tag:'【分支·规范合规】',blocks:[{type:'narration',text:'你认真填写表格信息，注明报销标准核对事由，工整签字，全程合规无漏洞。'},{type:'thought',text:'获得道具：财务档案查阅登记表留底'}],choices:[{label:'__auto__',nextScene:'ch15_merge3'}]},
+ch15_branch3b:{tag:'【分支·高效极简】',blocks:[{type:'narration',text:'你简洁填写核心信息，快速签字完成登记，最大限度缩短停留时间。'},{type:'thought',text:'获得道具：财务档案查阅登记表留底'}],choices:[{label:'__auto__',nextScene:'ch15_merge3'}]},
+ch15_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'周姐收好登记表，起身走向档案柜，取出专属凭证档案盒，递至你手中。'},{type:'dialogue',text:'周姐："看完放回档案盒，不要带走。"'}],choices:[{label:'__auto__',nextScene:'ch15_scene4'}]},
+ch15_scene4:{tag:'【底牌现世·资金链实锤】',blocks:[{type:'narration',text:'档案盒内，陈默移交的归档凭证完整留存。第十三章发现的单笔异常流转纸质原件清晰可查：项目经费转出、外部咨询中转、私人账户收尾，终审签字——孙总。继续翻阅，两笔同制式凭证依次浮现。三笔资金流转路径完全一致，时间间隔规律，按月周期性流转。账户名称各不相同，但三张汇款凭证的收款开户行，全部为盛恒商业银行。'}],choices:[{label:'逐笔拍摄凭证关键页面，完整留存证据',nextScene:'ch15_branch4a',itemGain:'three_voucher_photos'},{label:'重点拍摄核心签字、银行信息，精简留存',nextScene:'ch15_branch4b',itemGain:'three_voucher_photos'}]},
+ch15_branch4a:{tag:'【分支·全面留证】',blocks:[{type:'narration',text:'你手持手机，逐页拍摄每笔异常凭证的签字、流转路径、银行信息，完整固化底牌证据。'},{type:'thought',text:'获得道具：三笔异常资金流转凭证照片'}],choices:[{label:'__auto__',nextScene:'ch15_merge4'}]},
+ch15_branch4b:{tag:'【分支·精准留证】',blocks:[{type:'narration',text:'你只聚焦核心关键信息，精准拍摄孙总签字与盛恒商业银行落款，快速留存核心线索。'},{type:'thought',text:'获得道具：三笔异常资金流转凭证照片'}],choices:[{label:'__auto__',nextScene:'ch15_merge4'}]},
+ch15_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'拍完所有凭证，你将文件规整放回档案盒，交还周姐，全程未带走任何纸质原件。核销完报销单据，手持回执与几张归档清单复印件，离开财务部。'}],choices:[{label:'__auto__',nextScene:'ch15_scene5'}]},
+ch15_scene5:{tag:'【走廊遇袭·代价落地】',blocks:[{type:'narration',text:'办公区走廊拐角，赵东升迎面走来。短会提前结束。他的视线第一时间落在你手中的文件上，扫过回执，定格在归档清单复印件上。'},{type:'dialogue',text:'赵东升："这么快就核完了？"'},{type:'dialogue',text:'你："报销核对完毕，顺便调取归档清单对照标准。"'},{type:'dialogue',text:'赵东升："归档清单？翻旧档核报销，够仔细的。"'},{type:'narration',text:'他没有拦停、没有核查、没有追责。两句平淡对话，已然确认：你的旧档探查动作，彻底暴露。'}],choices:[{label:'神色平淡，侧身避让离开',nextScene:'ch15_branch5a'},{label:'点头回应，稳步从容返回工位',nextScene:'ch15_branch5b'}]},
+ch15_branch5a:{tag:'【分支·淡然处之】',blocks:[{type:'narration',text:'你神色不变，简单应声，侧身避让走廊通道，径直返回工位。'}],choices:[{label:'__auto__',nextScene:'ch15_merge5'}]},
+ch15_branch5b:{tag:'【分支·从容镇定】',blocks:[{type:'narration',text:'你点头回应，姿态从容，不慌不怯，稳步走回项目部。'}],choices:[{label:'__auto__',nextScene:'ch15_merge5'}]},
+ch15_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'你落座工位。五分钟后，赵东升同步返回，落座两米开外。两人静默对坐，全程无交流，工位区空气彻底凝固。你手机屏幕朝下扣在桌面，隐藏所有凭证照片。赵东升偶尔抬眼扫视，视线落点始终在你桌面、屏幕与手边文件上。'}],choices:[{label:'__auto__',nextScene:'ch15_scene6'}]},
+ch15_scene6:{tag:'【章末深挖·钱四海登场】',blocks:[{type:'narration',text:'下班，全员离场。项目部只剩你一人。陈默空工位依旧保持被赵东升整理过的规整模样，彻底褪去私人痕迹。阿杰的旧工装搭在椅背，安静伫立。你点亮手机，检索盛恒商业银行背景信息。页面信息清晰弹出：盛恒商业银行，控股方——四海集团。四海集团法定代表人——钱四海。'},{type:'narration',text:'你盯着"钱四海"三个字，看了很久。便利贴上那个日期。天台上那句"你现在还不能替我作证"。凭证上孙总的签字。所有碎片在这一刻同时指向同一个名字。'}],choices:[{label:'写下完整证据关联链',nextScene:'ch15_branch6a',itemGain:'qiansihai_link'},{label:'写下核心抉择问句',nextScene:'ch15_branch6b'}]},
+ch15_branch6a:{tag:'【分支·梳理证据链】',blocks:[{type:'narration',text:'你翻开笔记本，落笔梳理完整线索：孙总签字→月度异常资金流转→盛恒商业银行→四海集团→钱四海。陈默入职前探查目标，直指这条外部资金暗线。'},{type:'thought',text:'获得道具：四海集团-钱四海关联检索记录'}],choices:[{label:'__auto__',nextScene:'ch15_chapter_end'}]},
+ch15_branch6b:{tag:'【分支·锚定核心抉择】',blocks:[{type:'narration',text:'你落笔写下本章终极疑问：要不要亮身份？对手已不止内部孙总，外部牵连更广，普通员工身份已不足以支撑探查。'}],choices:[{label:'__auto__',nextScene:'ch15_chapter_end'}]},
+ch15_chapter_end:{tag:'【第十五章·结束】',blocks:[{type:'narration',text:'你合上笔记本。手机相册留存三张核心凭证照片，财务部留存你的查阅登记痕迹，赵东升掌握你的探查方向，全新的外部对手浮出水面。无天台邀约、无陌生消息、无人指引。底牌在手，前路两难。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十六章·抉择 =====
+ch16_scene1:{tag:'【上午官宣·定点约谈】',blocks:[{type:'narration',text:'上午工作时段，OA弹出定点通知，仅对你可见。主题：新员工入职阶段性沟通。时间：今日下午两点。地点：孙总办公室。'}],choices:[{label:'静默查看，关闭页面继续工作',nextScene:'ch16_branch1a'},{label:'留存通知截图，默默记下行事节点',nextScene:'ch16_branch1b'}]},
+ch16_branch1a:{tag:'【分支·低调蛰伏】',blocks:[{type:'narration',text:'你快速扫读通知内容，随即关闭页面，若无其事回归本职工作，不显露任何情绪异动。'}],choices:[{label:'__auto__',nextScene:'ch16_merge1'}]},
+ch16_branch1b:{tag:'【分支·留存痕迹】',blocks:[{type:'narration',text:'你截图留存约谈通知，锁定时间节点，将这条针对性约谈记录固化留存。'}],choices:[{label:'__auto__',nextScene:'ch16_merge1'}]},
+ch16_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'两米外的赵东升全程安静办公，未曾抬头，却像早已知晓一切。项目部的空气，再次沉了下去。'}],choices:[{label:'__auto__',nextScene:'ch16_scene2'}]},
+ch16_scene2:{tag:'【下午两点·孙总办公室约谈】',blocks:[{type:'narration',text:'办公室门闭合，环境安静松弛，无严肃压迫的刻意氛围。孙总端坐办公桌后，姿态温和，神色平淡，全然是前辈关怀后辈的模样。'},{type:'dialogue',text:'孙总："来公司大半个月了，感觉怎么样？项目部的工作节奏还适应吗？"'}],choices:[{label:'平稳应答，适配节奏、正常适应',nextScene:'ch16_branch2a'},{label:'谦逊回应，多学习、稳步跟进',nextScene:'ch16_branch2b'}]},
+ch16_branch2a:{tag:'【分支·沉稳应答】',blocks:[{type:'dialogue',text:'你："节奏可以适应，日常工作都能稳步完成。"'}],choices:[{label:'__auto__',nextScene:'ch16_merge2'}]},
+ch16_branch2b:{tag:'【分支·谦逊应答】',blocks:[{type:'dialogue',text:'你："整体很适应，还有很多需要学习的地方，一直在跟进熟悉。"'}],choices:[{label:'__auto__',nextScene:'ch16_merge2'}]},
+ch16_merge2:{tag:'【汇合·温柔封口】',blocks:[{type:'narration',text:'孙总微微点头，语气依旧温和，缓缓切入核心。'},{type:'dialogue',text:'孙总："最近听说你很上心工作，主动熟悉公司流程，翻了不少旧档。学习态度很好。"'},{type:'narration',text:'短暂停顿，语气不变，力道加重。'},{type:'dialogue',text:'孙总："不过有些旧档涉及跨部门协作，翻多了容易让人误会。你是新员工，我不希望你因为这些事，影响后续发展。"'},{type:'dialogue',text:'孙总："以后有什么想了解的，直接问赵东升就行。他经验丰富，比自己翻旧档高效稳妥。"'},{type:'narration',text:'全程无指责、无质问、无狠话。句句是关怀，句句是封口。'}],choices:[{label:'__auto__',nextScene:'ch16_scene3'}]},
+ch16_scene3:{tag:'【离场回流·职场无声信号】',blocks:[{type:'narration',text:'你走出办公室，返回项目部。赵东升抬头扫了你一眼，随即低头继续工作，无询问、无言语。李姐路过工位，默默放下一杯温水，无声离开。无人言语，但所有人都清楚：被孙总单独约谈，从来不是好事。陈默离开前，也经历过这一幕。'}],choices:[{label:'收下温水，静坐平复状态',nextScene:'ch16_branch3a'},{label:'目视李姐，轻轻点头示意',nextScene:'ch16_branch3b'}]},
+ch16_branch3a:{tag:'【分支·静默接纳】',blocks:[{type:'narration',text:'你看着桌面的水杯，端坐工位，不言不语，默默消化约谈传递的警告信号。'}],choices:[{label:'__auto__',nextScene:'ch16_merge3'}]},
+ch16_branch3b:{tag:'【分支·礼貌回应】',blocks:[{type:'narration',text:'你抬眼看向李姐背影，轻轻点头，接纳这份无声的提点与关照。'}],choices:[{label:'__auto__',nextScene:'ch16_merge3'}]},
+ch16_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'工位区依旧静默，温柔的警告落地，无声的禁锢彻底成型。'}],choices:[{label:'__auto__',nextScene:'ch16_scene4'}]},
+ch16_scene4:{tag:'【线索实锤·登记表被查】',blocks:[{type:'narration',text:'午休过后，刘伟趁无人注意，侧身低声传话。'},{type:'dialogue',text:'刘伟："上午赵东升去过财务部，说是核对项目部报销流程，待了挺久。"'},{type:'narration',text:'你起身前往财务部。周姐神色如常，做事规整，语气比往日更为审慎。'},{type:'dialogue',text:'周姐："报销核销正常走流程。登记表属于财务内部档案，按制度不外传。"'},{type:'narration',text:'停顿半秒，她直白告知底线与现状。'},{type:'dialogue',text:'周姐："但有人问询，我只能如实报备。你来查过、填表、签字，全程合规，不怕核查，但也藏不住。"'},{type:'narration',text:'真相落地：赵东升已经核查登记痕迹，孙总所有约谈警告，全部有据可依，绝非猜测。'}],choices:[{label:'__auto__',nextScene:'ch16_scene5'}]},
+ch16_scene5:{tag:'【关键指令·王总四字私信】',blocks:[{type:'narration',text:'你返回工位，OA页面弹出专属私讯。发件人：王总。内容无多余铺垫，仅有四字。'},{type:'bold',text:'别亮身份。'}],choices:[{label:'截图留存私信，锁定长线伏笔',nextScene:'ch16_branch4a',itemGain:'wang_dont_reveal'},{label:'默记指令，关闭页面隐藏痕迹',nextScene:'ch16_branch4b'}]},
+ch16_branch4a:{tag:'【分支·固化线索】',blocks:[{type:'narration',text:'你快速截图留存这条私信，将王总的关键指令完整固化为证据道具。'},{type:'thought',text:'获得道具：王总OA私信「别亮身份」截屏'}],choices:[{label:'__auto__',nextScene:'ch16_merge4'}]},
+ch16_branch4b:{tag:'【分支·无痕留存】',blocks:[{type:'narration',text:'你反复确认四字指令，默记于心，随即关闭页面，不留下任何可视痕迹。'}],choices:[{label:'__auto__',nextScene:'ch16_merge4'}]},
+ch16_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'王总精准命中了你心底未说出口的抉择。无人知晓的思考，被一语道破。暗中观察、全程掌舵的姿态彻底坐实。'}],choices:[{label:'__auto__',nextScene:'ch16_scene6'}]},
+ch16_scene6:{tag:'【傍晚细节·最后一杯咖啡】',blocks:[{type:'narration',text:'下班前夕，办公区众人陆续收尾工作。刘伟端着两杯咖啡走来，递出一杯给你，自己手持一杯。'},{type:'dialogue',text:'刘伟："今天没人给端咖啡了吧。最后两杯。明天开始，各自泡各自的。"'},{type:'narration',text:'你接过咖啡，喝了一口。速溶的，纸杯外没有裹餐巾纸。你想起第一天到岗，陈默放了一杯咖啡在你桌上，纸杯外裹着皱巴巴的餐巾纸。她当时没看你，看的是你屏幕上的考核倒计时。十四天。你那时候觉得这个数字很长。'}],choices:[{label:'安静接过，默然点头',nextScene:'ch16_branch5a'},{label:'轻声道谢，平稳接下',nextScene:'ch16_branch5b'}]},
+ch16_branch5a:{tag:'【分支·无声默契】',blocks:[{type:'narration',text:'你抬手接过咖啡，微微点头，无需言语，彼此心知局势变化。'}],choices:[{label:'__auto__',nextScene:'ch16_merge5'}]},
+ch16_branch5b:{tag:'【分支·礼貌回应】',blocks:[{type:'dialogue',text:'你："谢了。"'}],choices:[{label:'__auto__',nextScene:'ch16_merge5'}]},
+ch16_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'两人并肩喝完这杯咖啡。多季以来的旁观、沉默、忐忑，尽数融在温热的杯盏里。'}],choices:[{label:'__auto__',nextScene:'ch16_scene7'}]},
+ch16_scene7:{tag:'【主动破局·邀约结盟】',blocks:[{type:'narration',text:'刘伟收拾好随身物品，准备下班离场。'},{type:'dialogue',text:'你："刘伟，下班有空吗？请你喝杯咖啡。"'},{type:'narration',text:'刘伟动作一顿，愣神片刻，随即轻轻点头。'}],choices:[{label:'__auto__',nextScene:'ch16_scene8'}]},
+ch16_scene8:{tag:'【场外约谈·小人物的勇气】',blocks:[{type:'narration',text:'公司附近咖啡店，暮色落地，环境安静私密。两人对坐，无多余寒暄。'},{type:'dialogue',text:'你："陈默被开除，大概率和她之前在查的事有关。我不细说内情，只需要你帮我一个忙。"'},{type:'dialogue',text:'刘伟："什么忙？"'},{type:'dialogue',text:'你："帮我盯着赵东升。他什么时候到岗、什么时候离岗、什么时候去财务部、有没有异常动向。你是项目部最不起眼的人，他不会设防。"'},{type:'narration',text:'刘伟低头看着面前的咖啡杯，沉默良久。'},{type:'dialogue',text:'刘伟："陈默在的时候，我也帮她跑过腿。我不知道她查的是什么，后来她被开除，我真的怕了。"'},{type:'narration',text:'他抬眼看向你，眼底藏着忐忑，也藏着积压多季的愧疚。'},{type:'dialogue',text:'刘伟："但我天天看着你翻旧档、被警告、被堵路、被约谈。我每天只会端咖啡，什么忙都帮不上。"'},{type:'dialogue',text:'刘伟："赵东升的动向，我帮你看着。"'}],choices:[{label:'沉稳点头，敲定默契',nextScene:'ch16_branch6a'},{label:'轻声应声，确认约定',nextScene:'ch16_branch6b'}]},
+ch16_branch6a:{tag:'【分支·无声笃定】',blocks:[{type:'narration',text:'你看着他，郑重点头，无需多言，两人达成无声默契。'}],choices:[{label:'__auto__',nextScene:'ch16_chapter_end'}]},
+ch16_branch6b:{tag:'【分支·简短确认】',blocks:[{type:'dialogue',text:'你："辛苦。后续我只找你对接动向。"'}],choices:[{label:'__auto__',nextScene:'ch16_chapter_end'}]},
+ch16_chapter_end:{tag:'【第十六章·结束】',blocks:[{type:'narration',text:'两人起身离店，街灯亮起，暮色笼罩街道。刘伟走了两步，忽然回头。'},{type:'dialogue',text:'刘伟："陈默以前，也请我喝过咖啡。"'},{type:'narration',text:'一句话轻描淡写，悄然将你的坚持，与陈默当年的坚守重合。刘伟转身汇入人流，独自离场。你独自折返公司方向。翻开私人笔记本，昨日写下的「要不要亮身份」旁，你落笔新的一行：不亮。找帮手。'},{type:'narration',text:'空荡的项目部工位区，陈默的空位依旧是被整理过的规整模样，阿杰的旧工装搭在椅背，褪色绳结静静伫立，见证着新一轮的暗局开启。前路依旧被监视、被封堵、被试探，但你不再孤军奋战。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十七章·暗线 =====
+ch17_scene1:{tag:'【上午工位·新掩护成型】',blocks:[{type:'narration',text:'项目部日常在岗状态。赵东升端坐两米外工位，全程紧盯办公区动态。刘伟彻底终止端咖啡习惯，全程以接水为唯一移动掩护，频繁起身、缓步走动，视线自然扫过赵东升桌面。无人察觉异常，旧的工位仪式彻底落幕，新的情报观测模式正式成型。'}],choices:[{label:'正常办公，静待刘伟信号',nextScene:'ch17_branch1a'},{label:'余光留意赵东升桌面烟盒状态',nextScene:'ch17_branch1b'}]},
+ch17_branch1a:{tag:'【分支·蛰伏等待】',blocks:[{type:'narration',text:'你专注手头工作，保持常态化办公状态，不主动观望，静待约定暗号。'}],choices:[{label:'__auto__',nextScene:'ch17_merge1'}]},
+ch17_branch1b:{tag:'【分支·细节求证】',blocks:[{type:'narration',text:'你余光扫过赵东升桌面，清晰看见桌上摆放满盒香烟，默默记下初始状态。'}],choices:[{label:'__auto__',nextScene:'ch17_merge1'}]},
+ch17_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'临近上午收尾，刘伟起身接水，路过你工位时，指尖极轻、极快地敲了两下桌角，随即正常前行，动作自然无痕。'}],choices:[{label:'__auto__',nextScene:'ch17_scene2'}]},
+ch17_scene2:{tag:'【茶水间·首次情报交付】',blocks:[{type:'narration',text:'茶水间无人，空间密闭隐蔽。刘伟语速极快，无多余铺垫，直奔重点。'},{type:'dialogue',text:'刘伟："连着两天了，下午两点到三点，他固定外出抽烟，不在工位。不是开会，风雨无阻。"'},{type:'dialogue',text:'你："怎么确定是固定规律？"'},{type:'dialogue',text:'刘伟："看烟盒。两点前满盒，回来就瘪了。第二天复原，准时重复，两天没偏差。"'},{type:'dialogue',text:'刘伟："今天窗口稳，我帮你盯着动静，你放心去。"'},{type:'narration',text:'话音落，刘伟端水杯离开，全程神态自然，未引起任何人注意。'}],choices:[{label:'返回工位，低调待命',nextScene:'ch17_branch2a'},{label:'默记时间节点，做好出行准备',nextScene:'ch17_branch2b',itemGain:'liuwei_intel_record'}]},
+ch17_branch2a:{tag:'【分支·稳妥蛰伏】',blocks:[{type:'narration',text:'你点头示意，跟随返回办公区，落座工位，维持正常工作状态，静待下午窗口。'}],choices:[{label:'__auto__',nextScene:'ch17_merge2'}]},
+ch17_branch2b:{tag:'【分支·提前筹备】',blocks:[{type:'narration',text:'你牢牢记下十四点固定窗口，提前整理好报销单据，备好出行掩护凭证。'},{type:'thought',text:'获得道具：刘伟情报记录'}],choices:[{label:'__auto__',nextScene:'ch17_merge2'}]},
+ch17_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'整个上午，办公区氛围平稳，无人察觉一场精准的探查计划已经敲定。'}],choices:[{label:'__auto__',nextScene:'ch17_scene3'}]},
+ch17_scene3:{tag:'【下午两点·窗口期开启】',blocks:[{type:'narration',text:'整点十四点，赵东升起身，拿起桌面满盒香烟，径直走出项目部。他无交代、无停留，工位瞬间空置。刘伟目视赵东升离开，随即轻敲一次自己桌角，发出行动暗号。'}],choices:[{label:'稍作等待，延后片刻出发',nextScene:'ch17_branch3a'},{label:'收到暗号，即刻起身前往财务',nextScene:'ch17_branch3b'}]},
+ch17_branch3a:{tag:'【分支·极致谨慎】',blocks:[{type:'narration',text:'你静坐等待片刻，确认走廊无折返动静、无突发人员走动，才起身行动。'}],choices:[{label:'__auto__',nextScene:'ch17_merge3'}]},
+ch17_branch3b:{tag:'【分支·精准执行】',blocks:[{type:'narration',text:'你收到暗号，手持报销单，即刻起身，稳步走向财务部。'}],choices:[{label:'__auto__',nextScene:'ch17_merge3'}]},
+ch17_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'财务部正常在岗，周姐看到你到来，神色平静，无诧异、无追问。'},{type:'dialogue',text:'你："核对往期报销数据，需要再对照一遍原始凭证。"'},{type:'narration',text:'周姐取出对应档案盒，递至你手中。'},{type:'dialogue',text:'周姐："尽快。最近这类问询，频次变多了。"'}],choices:[{label:'__auto__',nextScene:'ch17_scene4'}]},
+ch17_scene4:{tag:'【证据闭环·照片与原件核验】',blocks:[{type:'narration',text:'你打开档案盒，取出三笔异常资金流转纸质凭证。点亮手机，调出第十五章留存的凭证照片，逐笔逐项核对。签字笔迹一致、金额数据一致、流转日期一致、收款开户行一致。电子留存可篡改、日志可清理、权限可降级，唯有纸质原件固定不变，证据链彻底无懈可击、完全闭环。'}],choices:[{label:'快速规整归档，交还周姐',nextScene:'ch17_branch4a'},{label:'逐项确认无误，再规整归档',nextScene:'ch17_branch4b'}]},
+ch17_branch4a:{tag:'【分支·高效收尾】',blocks:[{type:'narration',text:'确认全部信息匹配无误，你快速整理凭证，归位档案盒，交还周姐。'}],choices:[{label:'__auto__',nextScene:'ch17_merge4'}]},
+ch17_branch4b:{tag:'【分支·严谨收尾】',blocks:[{type:'narration',text:'你反复核对关键信息，确认无任何偏差，规整所有文件，完好交还。'}],choices:[{label:'__auto__',nextScene:'ch17_merge4'}]},
+ch17_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'周姐接过档案盒，妥善收纳进档案柜。'},{type:'dialogue',text:'周姐："归档的东西不会丢。纸质有纸质的好处。"'},{type:'narration',text:'话语平淡，暗含深意，点破电子系统的漏洞与纸质凭证的绝对安全性。'}],choices:[{label:'__auto__',nextScene:'ch17_scene5'}]},
+ch17_scene5:{tag:'【走廊偶遇·小林无声留白】',blocks:[{type:'narration',text:'你离开财务部，拐过走廊转角。小林手持文件夹，静静站在走廊尽头，似在等候、似在取件。两人视线精准对接。小林无问话、无阻拦、无通报、无表情，仅仅直视你两秒，随即微微颔首。动作完毕，侧身擦肩而过，各自前行。全程无一句对话，却完成了完整信息传递：我看见你了，我一直都在观察。'}],choices:[{label:'神色如常，稳步前行',nextScene:'ch17_branch5a'},{label:'淡然颔首，对等回应',nextScene:'ch17_branch5b'}]},
+ch17_branch5a:{tag:'【分支·沉稳应对】',blocks:[{type:'narration',text:'你神色不变，脚步不停，无视无声试探，正常返回项目部。'}],choices:[{label:'__auto__',nextScene:'ch17_merge5'}]},
+ch17_branch5b:{tag:'【分支·对等回应】',blocks:[{type:'narration',text:'你微微点头回应，不卑不亢，稳步擦肩而过。'}],choices:[{label:'__auto__',nextScene:'ch17_merge5'}]},
+ch17_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'你回到工位。片刻后，赵东升准时折返，桌面烟盒已然干瘪。全员就位，办公区恢复常态，无人知晓方才完成的关键核验。'}],choices:[{label:'__auto__',nextScene:'ch17_scene6'}]},
+ch17_scene6:{tag:'【傍晚空场·全线证据梳理】',blocks:[{type:'narration',text:'下班时段，众人陆续离场。项目部只剩你一人。陈默空置工位依旧保持规整状态，阿杰旧工装搭在椅背，安静伫立。你翻开私人笔记本，逐条串联全季所有线索：入职前便利贴、OA日志清理、权限降级、三笔月度异常资金、盛恒商业银行→四海集团→钱四海、全套封路打压。所有碎片闭环，整条链路清晰完整。'}],choices:[{label:'__auto__',nextScene:'ch17_scene7'}]},
+ch17_scene7:{tag:'【终章前奏·陈默破冰邮件】',blocks:[{type:'narration',text:'笔记本合上瞬间，电脑右下角弹出新邮件提醒。发件人：陈默（个人邮箱）。主题：无。正文四字。'},{type:'bold',text:'准备好了吗？'}],choices:[{label:'截图留存邮件，固化终章伏笔',nextScene:'ch17_branch6a',itemGain:'chenmo_email'},{label:'光标悬停回复框，短暂停顿后退出',nextScene:'ch17_branch6b'}]},
+ch17_branch6a:{tag:'【分支·留存线索】',blocks:[{type:'narration',text:'你快速截图邮件页面，完整留存陈默失联后的首次联络记录，锁定终章核心伏笔。'},{type:'thought',text:'获得道具：陈默个人邮箱邮件截屏'}],choices:[{label:'__auto__',nextScene:'ch17_chapter_end'}]},
+ch17_branch6b:{tag:'【分支·静默蓄力】',blocks:[{type:'narration',text:'你将光标移至回复按钮，短暂停顿后，不点、不回、不操作。'}],choices:[{label:'__auto__',nextScene:'ch17_chapter_end'}]},
+ch17_chapter_end:{tag:'【第十七章·结束】',blocks:[{type:'narration',text:'窗外天色全黑，办公室灯光惨白安静。你关闭电脑屏幕，起身离场。不回复，不代表无应答。沉默是留给终章的最终回应。所有备战完毕，所有证据闭环，所有暗线就位。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十八章·收网 =====
+ch18_scene1:{tag:'【上午在岗·静默等待】',blocks:[{type:'narration',text:'项目部全日常态值守。赵东升全程在岗，视线覆盖整片工位区，无异常举动。刘伟照旧以接水为掩护，低调观测四周动静，维持既定情报节奏。办公区氛围平稳，无人知晓一场横跨全季的真相揭晓，即将在下班后落地。'}],choices:[{label:'常态办公，低调蛰伏不露端倪',nextScene:'ch18_branch1a'},{label:'平稳工作，静待晚间约定信号',nextScene:'ch18_branch1b'}]},
+ch18_branch1a:{tag:'【分支·无痕蛰伏】',blocks:[{type:'narration',text:'你全程专注本职工作，言行如常，彻底隐藏内心期待，无任何异常神态与动作。'}],choices:[{label:'__auto__',nextScene:'ch18_merge1'}]},
+ch18_branch1b:{tag:'【分支·沉稳待命】',blocks:[{type:'narration',text:'你稳步完成当日工作，保持松弛状态，默默等候晚间的见面邀约落地。'}],choices:[{label:'__auto__',nextScene:'ch18_merge1'}]},
+ch18_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'手机屏幕静默亮起，一条新短信弹窗弹出。发件人：陌生号码。正文：下班后，门口第二个路口左转，那家咖啡店。请你喝咖啡。你收起手机，神色未变。赵东升全程未曾察觉。'}],choices:[{label:'__auto__',nextScene:'ch18_scene2'}]},
+ch18_scene2:{tag:'【傍晚离场·奔赴重逢】',blocks:[{type:'narration',text:'下班时间到，众人陆续收拾离场。陈默空置工位依旧规整如初，阿杰旧工装静静搭在椅背，成为贯穿全季的沉默背景。你随人流离开公司，沿路抵达约定咖啡店。'}],choices:[{label:'径直走入，目视卡座方向',nextScene:'ch18_branch2a'},{label:'短暂驻足，确认环境后入场',nextScene:'ch18_branch2b'}]},
+ch18_branch2a:{tag:'【分支·笃定奔赴】',blocks:[{type:'narration',text:'你抬步径直走入店内，视线精准锁定角落卡座的人影。'}],choices:[{label:'__auto__',nextScene:'ch18_merge2'}]},
+ch18_branch2b:{tag:'【分支·谨慎稳妥】',blocks:[{type:'narration',text:'你在店门口短暂驻足，确认店内无异常后，缓步入场。'}],choices:[{label:'__auto__',nextScene:'ch18_merge2'}]},
+ch18_merge2:{tag:'【汇合·重逢】',blocks:[{type:'narration',text:'角落卡座，陈默端坐于此。身形清瘦些许，眼神依旧清亮沉稳。她看见你，抬手轻轻示意，动作随意自然，仿若从未离场。你落座对面。陈默将一杯提前备好的咖啡推至你面前。'},{type:'dialogue',text:'陈默："咖啡自己冲了？出师了。"'}],choices:[{label:'__auto__',nextScene:'ch18_scene3'}]},
+ch18_scene3:{tag:'【真相揭晓·轻描淡写全盘托出】',blocks:[{type:'narration',text:'陈默低头抿了一口咖啡，未做多余铺垫，平淡开口，逐层拆解全季所有暗线。'},{type:'dialogue',text:'陈默："3月12日下午三点十五分，孙总办公室的便利贴，你翻到了。那是我入职前一周写的。那时候没证据，只有直觉。"'},{type:'dialogue',text:'陈默："进来之后我才摸清，他不是单独做事。钱四海，你查到的盛恒商业银行、四海集团，都对。孙总的异常资金流转，最终全部流向他的体系。"'},{type:'dialogue',text:'陈默："但公司内部权限锁死，OA、财务、审批全在他手里。我拿不到核心证据，只能被困在局里。所以我需要出去。"'},{type:'dialogue',text:'陈默："第九章的签字陷阱，我看出来了。我可以躲开，可以推诿，但我没躲。孙总需要一个替罪羊稳住局面，我需要一个合规离场的理由。苦肉计，我和王总早就商定好了。"'},{type:'dialogue',text:'陈默："你不用愧疚。那不是你的错，是我布的局。"'},{type:'dialogue',text:'陈默："这八个月我没停过。脱离公司体系，专门追查钱四海的外部关联公司、资金链路。王总一直在内部配合，天台偶遇、暗中提示、不让你亮身份，都是为了护着你。"'},{type:'dialogue',text:'陈默："现在你查到底了，最终考核也启动了。我回来，不是帮你翻盘，是把翻盘的刀递给你。"'},{type:'narration',text:'她说完，将一个黑色U盘轻轻推至桌面中央。'},{type:'dialogue',text:'陈默："里面是三样东西。明天考核，你知道什么时候用。"'}],choices:[{label:'沉默注视U盘，静待后续',nextScene:'ch18_branch3a'},{label:'抬眼看向陈默，平静对视',nextScene:'ch18_branch3b'}]},
+ch18_branch3a:{tag:'【分支·静默沉淀】',blocks:[{type:'narration',text:'你目光落在U盘上，全程沉默，任由所有积压的疑惑与愧疚缓缓落地。'}],choices:[{label:'__auto__',nextScene:'ch18_merge3'}]},
+ch18_branch3b:{tag:'【分支·无声对视】',blocks:[{type:'narration',text:'你抬眼望向陈默，没有言语，以平静对视接纳所有真相。'}],choices:[{label:'__auto__',nextScene:'ch18_merge3'}]},
+ch18_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'陈默面前的咖啡已然凉透，全程未再多饮一口。轻描淡写的几句话，拆解了横跨十七日的所有困局。'}],choices:[{label:'__auto__',nextScene:'ch18_scene4'}]},
+ch18_scene4:{tag:'【互动4·情感出口抉择】',blocks:[{type:'narration',text:'所有真相落地，积压全季的情绪需要一个出口。'}],choices:[{label:'开口询问：第九章那天，你为什么不回头？',nextScene:'ch18_branch4a'},{label:'起身离场，前往前台换热咖啡',nextScene:'ch18_branch4b'}]},
+ch18_branch4a:{tag:'【分支·问句释怀】',blocks:[{type:'dialogue',text:'你："第九章那天你走的时候，为什么不回头看我一眼？"'},{type:'dialogue',text:'陈默："回头了，就走不了了。"'}],choices:[{label:'__auto__',nextScene:'ch18_merge4'}]},
+ch18_branch4b:{tag:'【分支·行动释怀】',blocks:[{type:'narration',text:'你起身走到前台，点了一杯热咖啡，替换掉陈默面前的凉杯。'},{type:'dialogue',text:'陈默："学会照顾人了。"'}],choices:[{label:'__auto__',nextScene:'ch18_merge4'}]},
+ch18_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'一答一动，消解全季积压的所有情绪。无煽情、无宣泄，唯有默契释然。'}],choices:[{label:'__auto__',nextScene:'ch18_scene5'}]},
+ch18_scene5:{tag:'【终局叮嘱·全季伏笔闭环】',blocks:[{type:'narration',text:'陈默抬手收起随身物品，起身准备离场。行至卡座边缘，她脚步微顿，回头看向你。'},{type:'dialogue',text:'陈默："明天最终考核，你带队。我在外面看结果。"'},{type:'dialogue',text:'陈默："对了。赵东升递的烟别接。现在你该彻底懂了。"'},{type:'narration',text:'话音落下，转身离开咖啡店，身影融入夜色街道。第一章便利贴警示、全季职场陷阱暗示，至此彻底闭环。'}],choices:[{label:'静坐卡座，目送身影远去',nextScene:'ch18_branch5a'},{label:'起身站立，安静目送离场',nextScene:'ch18_branch5b'}]},
+ch18_branch5a:{tag:'【分支·静默目送】',blocks:[{type:'narration',text:'你端坐原位，目视陈默身影彻底消失在街灯尽头。'}],choices:[{label:'__auto__',nextScene:'ch18_merge5'}]},
+ch18_branch5b:{tag:'【分支·立身目送】',blocks:[{type:'narration',text:'你起身站立，望向窗外，安静目送她离场。'}],choices:[{label:'__auto__',nextScene:'ch18_merge5'}]},
+ch18_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'店内只剩你一人。桌面两杯咖啡，一杯微凉见底，一杯温热崭新。U盘静静置于桌中央。'}],choices:[{label:'__auto__',nextScene:'ch18_scene6'}]},
+ch18_scene6:{tag:'【互动6·收尾取证蓄力】',blocks:[{type:'narration',text:'终局核心证据就在眼前。'}],choices:[{label:'拿起U盘，稳妥收好',nextScene:'ch18_branch6a',itemGain:'chenmo_usb',alsoGain:'chenmo_testimony'},{label:'确认桌面无遗留，收起证据',nextScene:'ch18_branch6b',itemGain:'chenmo_usb',alsoGain:'chenmo_testimony'}]},
+ch18_branch6a:{tag:'【分支·稳妥收纳】',blocks:[{type:'narration',text:'你抬手拿起U盘，揣进贴身口袋，稳妥收好终局核心证据。'},{type:'thought',text:'获得道具：陈默加密U盘、陈默证词关键内容摘要'}],choices:[{label:'__auto__',nextScene:'ch18_chapter_end'}]},
+ch18_branch6b:{tag:'【分支·细致收尾】',blocks:[{type:'narration',text:'你确认桌面无任何遗留痕迹，收起U盘，完成全部收尾。'},{type:'thought',text:'获得道具：陈默加密U盘、陈默证词关键内容摘要'}],choices:[{label:'__auto__',nextScene:'ch18_chapter_end'}]},
+ch18_chapter_end:{tag:'【第十八章·结束】',blocks:[{type:'narration',text:'你独自走出咖啡店，折返公司方向。街灯次第亮起，夜色沉静。手机OA弹出全新通知：明日启动全员最终考核，各部门就绪待命。你翻开私人笔记本，落笔写下最后一行字：明天。空荡的项目部、规整的陈默工位、椅背的旧工装，静默伫立，静待终局翻盘。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第十九章·翻盘 =====
+ch19_scene1:{tag:'【上午官宣·最终考核启幕】',blocks:[{type:'narration',text:'晨间OA弹窗置顶，全员可见。《季度部门考核最终轮通知》今日正式落地。评委组席位敲定：孙总主审、王总、周姐、李姐、外部行业顾问。工位区氛围紧绷，全季终极擂台正式成型。'}],choices:[{label:'静默整理资料，稳妥备战',nextScene:'ch19_branch1a'},{label:'核对U盘文件，最后核验',nextScene:'ch19_branch1b'}]},
+ch19_branch1a:{tag:'【分支·沉稳备战】',blocks:[{type:'narration',text:'你低头规整汇报文件与笔记本，全程神色平静，无多余动作，稳住赛前心态。'}],choices:[{label:'__auto__',nextScene:'ch19_merge1'}]},
+ch19_branch1b:{tag:'【分支·极致严谨】',blocks:[{type:'narration',text:'你点开电脑文件，快速核对U盘内合同扫描件、资金流水、证词文件，确保无任何疏漏。'}],choices:[{label:'__auto__',nextScene:'ch19_merge1'}]},
+ch19_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'刘伟起身接水，路过你工位，指尖轻敲桌角一次。'},{type:'dialogue',text:'刘伟："咖啡给你留着，回来喝。"'},{type:'narration',text:'全季咖啡线至此收官。你收起设备，起身带队，独自走向会议室。李姐、刘伟、张野随行旁听。'}],choices:[{label:'__auto__',nextScene:'ch19_scene2'}]},
+ch19_scene2:{tag:'【会议室就位·权力格局落定】',blocks:[{type:'narration',text:'会议室席位规整，权责分明。评委席正中：孙总，神色淡然。左侧：王总，静默端坐。右侧：周姐、李姐。后侧：外部顾问。汇报席对立而立：竞品部赵东升带队，项目部由你独立述职。'}],choices:[{label:'稳步落座，平视前方',nextScene:'ch19_branch2a'},{label:'简洁落座，静待流程开启',nextScene:'ch19_branch2b'}]},
+ch19_branch2a:{tag:'【分支·气场沉稳】',blocks:[{type:'narration',text:'你抬步稳步落座，视线平视评委席，不卑不亢，气场平稳。'}],choices:[{label:'__auto__',nextScene:'ch19_merge2'}]},
+ch19_branch2b:{tag:'【分支·低调蛰伏】',blocks:[{type:'narration',text:'你简洁落座，腰背挺直，安静等候考核流程启动。'}],choices:[{label:'__auto__',nextScene:'ch19_merge2'}]},
+ch19_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'考核正式开始。'}],choices:[{label:'__auto__',nextScene:'ch19_scene3'}]},
+ch19_scene3:{tag:'【赵东升汇报·完美铺垫】',blocks:[{type:'narration',text:'赵东升率先登台述职。数据量化清晰、流程规范完整、季度成果详实，全程滴水不漏。汇报完毕，孙总微微颔首。全场评委无一人提出质疑，竞品部率先锁定优势局面。轮到项目部汇报。你登台，平稳推进述职内容。汇报进行中段，赵东升突然抬手，当场打断。'}],choices:[{label:'__auto__',nextScene:'ch19_scene4'}]},
+ch19_scene4:{tag:'【事件发难·蓄意围堵】',blocks:[{type:'narration',text:'赵东升操控投影屏幕，《财务档案查阅登记表》全屏弹出。你的签字、查阅时间、归档事由，一览无余。'},{type:'dialogue',text:'赵东升："新员工入职未满一月，频繁调取跨部门归档旧档，远超常规工作范畴。我质疑项目部考核期内占用公共资源，开展非工作相关事项，考核成绩应当酌情扣减。"'},{type:'narration',text:'全场瞬间安静。孙总目视你，沉默等候回应。蓄意陷阱彻底落地。'}],choices:[{label:'先证合规，再抛证据',nextScene:'ch19_branch3a'},{label:'直接反击，亮出核心依据',nextScene:'ch19_branch3b'}]},
+ch19_branch3a:{tag:'【分支·稳妥破局】',blocks:[{type:'dialogue',text:'你："所有查阅操作均依规登记，流程合规，周姐可现场佐证。"'},{type:'dialogue',text:'周姐："登记流程完整合规，无违规调档记录。"'},{type:'dialogue',text:'你："之所以频繁核对旧档，并非无关工作，而是为核实竞品部项目资金异常。"'}],choices:[{label:'__auto__',nextScene:'ch19_merge3'}]},
+ch19_branch3b:{tag:'【分支·强势反击】',blocks:[{type:'dialogue',text:'你："调档合规有据可查，真正需要质询的，是竞品部项目资金流转的异常漏洞。我有完整证据佐证。"'}],choices:[{label:'__auto__',nextScene:'ch19_merge3'}]},
+ch19_merge3:{tag:'【汇合·U盘举证】',blocks:[{type:'narration',text:'你上前一步，将黑色U盘插入会议主机。'},{type:'thought',text:'道具消耗：陈默加密U盘（已使用，完成全季核心使命）'},{type:'narration',text:'第一份文件全屏展示：竞品部项目原始合同扫描件。30%资金以"外部咨询"名义空转，最终收款方关联四海集团。第二份文件弹出：三年资金往来流水。多笔竞品部对公支出，最终归集盛恒商业银行钱四海控股账户。'},{type:'dialogue',text:'你："我查阅归档凭证，是为核实资金流转是否具备合理业务背景。目前所有证据显示，该部分资金流转无合规支撑，存在重大核查疑点。"'},{type:'narration',text:'全场哗然。所有证据精准指向孙总签字审批链路，无情绪化指控，纯规则碾压。'}],choices:[{label:'__auto__',nextScene:'ch19_scene5'}]},
+ch19_scene5:{tag:'【孙总受挫·王总出手控局】',blocks:[{type:'narration',text:'孙总全程未打断，面色平稳无波澜。'},{type:'dialogue',text:'孙总："资料来源何处？"'}],choices:[{label:'模糊暗示：来源可靠，证词可当面核验',nextScene:'ch19_branch4a'},{label:'回避溯源：以事实为准，交由审计核实',nextScene:'ch19_branch4b'}]},
+ch19_branch4a:{tag:'【分支·留有余地】',blocks:[{type:'dialogue',text:'你："证据来源可靠，如需核验，证词提供者可当面确认。"'}],choices:[{label:'__auto__',nextScene:'ch19_merge4'}]},
+ch19_branch4b:{tag:'【分支·聚焦事实】',blocks:[{type:'dialogue',text:'你："证据真伪可通过官方审计核验，来源并非本次考核核心议题。"'}],choices:[{label:'__auto__',nextScene:'ch19_merge4'}]},
+ch19_merge4:{tag:'【汇合·王总出手】',blocks:[{type:'narration',text:'孙总眸光微沉，不再追问。王总首次公开开口，语气冷静、措辞制式。'},{type:'dialogue',text:'王总："评委组提议，暂时中止孙总主审及评分资格。资金异常问题未核查完毕前，需回避本次考核评审工作，由外部顾问代行主审职权。"'},{type:'narration',text:'外部顾问、周姐、李姐全员附议。'},{type:'dialogue',text:'孙总："可以。考核继续。"'},{type:'narration',text:'孙总起身离场，姿态克制、未失体面，但彻底丧失本场评审权。'}],choices:[{label:'__auto__',nextScene:'ch19_scene6'}]},
+ch19_scene6:{tag:'【终极抉择·身份亮明分支】',blocks:[{type:'narration',text:'考核继续推进，由外部顾问主持全场。你完整收尾项目部述职汇报。外部顾问抛出核心质询。'},{type:'dialogue',text:'外部顾问："普通新员工无权限开展系统性跨部门资金核对与凭证核验。你本次核查工作，依据何种身份？"'}],choices:[{label:'亮明身份：合作商大股东派驻代表',nextScene:'ch19_branch5a'},{label:'隐藏身份：承接陈默遗留核查工作',nextScene:'ch19_branch5b'}]},
+ch19_branch5a:{tag:'【分支·破局亮身】',blocks:[{type:'dialogue',text:'你："我为项目合作方大股东派驻代表，有权对项目资金使用合规性开展尽职调查，所有核查行为均符合商业尽调规则。"'},{type:'narration',text:'调查权限彻底合法化、制度化，全场无一人可质疑。身份公开，彻底告别潜伏状态。'}],choices:[{label:'__auto__',nextScene:'ch19_merge5'}]},
+ch19_branch5b:{tag:'【分支·蛰伏藏身】',blocks:[{type:'dialogue',text:'你："本次核查工作，承接陈默离职前遗留的归档疑点清单，属于工作交接后的后续核对，全程依规登记。"'},{type:'narration',text:'周姐当场点头佐证，核查流程合理性落地。身份继续隐秘，风险可控。'}],choices:[{label:'__auto__',nextScene:'ch19_merge5'}]},
+ch19_merge5:{tag:'【汇合·考核翻盘】',blocks:[{type:'narration',text:'评委组完成打分。最终结果公示：项目部得分反超竞品部，成功保岗，考核彻底翻盘。'},{type:'thought',text:'获得道具：最终考核评分记录、孙总评委资格暂停会议纪要'}],choices:[{label:'__auto__',nextScene:'ch19_scene7'}]},
+ch19_scene7:{tag:'【傍晚工位·阿杰伏笔终揭晓】',blocks:[{type:'narration',text:'考核结束，暮色笼罩办公区。项目部只剩你一人。王总独自走入项目部，径直走到工位旁。'},{type:'dialogue',text:'王总："阿杰，是这个工位的上一任。陈默的前任。"'},{type:'dialogue',text:'王总："他是第一个发现竞品部资金异常的人。只是当年仅有台账差额，无完整证据链。孙总以工作失误为由，将他开除。这件工装，他没带走。"'},{type:'dialogue',text:'王总："我跟你说过，他也查过，没查完。陈默接了这个工位，也接了他没做完的核查。现在，你接了陈默的。"'},{type:'narration',text:'三代人，同一工位，同一条暗线，同一场未竟的坚守。全季最深情感伏笔彻底闭环。'},{type:'dialogue',text:'王总："明天，正式审计通知下发。做好准备。"'},{type:'narration',text:'王总说完，转身离场。'}],choices:[{label:'取便利贴，手写留言贴至陈默工位',nextScene:'ch19_branch6a'},{label:'静坐工位，复盘今日全程战局',nextScene:'ch19_branch6b'}]},
+ch19_branch6a:{tag:'【分支·双向呼应】',blocks:[{type:'narration',text:'你取出一张新便利贴，落笔四字：明天见。抬手贴在陈默工位显示器边框。从陈默留贴引路，到你留贴赴约，全季首尾完美呼应。'}],choices:[{label:'__auto__',nextScene:'ch19_chapter_end'}]},
+ch19_branch6b:{tag:'【分支·沉稳复盘】',blocks:[{type:'narration',text:'你静坐工位，回望十七日所有探查、蛰伏、交锋、反击，静待终局到来。'}],choices:[{label:'__auto__',nextScene:'ch19_chapter_end'}]},
+ch19_chapter_end:{tag:'【第十九章·结束】',blocks:[{type:'narration',text:'手机屏幕亮起，陈默短信弹窗弹出。正文：今天在会议室外面听到了。干得漂亮。明天见。你翻开私人笔记本，在空白页落下最后一行字：明天。'}],choices:[{label:'__auto__',nextScene:'__end__'}]},
+// ===== 第二十章·终局 =====
+ch20_scene1:{tag:'【晨间官宣·审计启幕】',blocks:[{type:'narration',text:'清晨OA置顶公告准时推送，发件人：王总。公告内容：依据季度最终考核核验证据，公司授权第三方审计组，启动竞品部项目资金合规专项审计。审计期间，孙总暂停一切管理职务，全程配合核查。'},{type:'narration',text:'刘伟第一时间刷新页面，目光定格公告数秒。'},{type:'dialogue',text:'刘伟："公告发了。"'},{type:'narration',text:'你微微点头。刘伟拿起桌前常备的马克杯，接了一杯温水。从一次性纸杯到专属马克杯，他的职场忐忑彻底落幕。赵东升工位彻底空置，桌角堆叠的文件无人触碰。'}],choices:[{label:'静坐工位，静待局势落地',nextScene:'ch20_branch1a'},{label:'浏览公告，确认审计细则',nextScene:'ch20_branch1b'}]},
+ch20_branch1a:{tag:'【分支·沉稳静待】',blocks:[{type:'narration',text:'你端坐工位，神色平静。二十天步步为营、隐忍蛰伏，终局如期而至。'}],choices:[{label:'__auto__',nextScene:'ch20_merge1'}]},
+ch20_branch1b:{tag:'【分支·严谨核验】',blocks:[{type:'narration',text:'你点开公告全文，逐字核对审计权限、核查范围、执行流程，确认所有程序合法合规。'}],choices:[{label:'__auto__',nextScene:'ch20_merge1'}]},
+ch20_merge1:{tag:'【汇合】',blocks:[{type:'narration',text:'上午十点，第三方审计组三人走出电梯，径直走向孙总办公室。'}],choices:[{label:'__auto__',nextScene:'ch20_scene2'}]},
+ch20_scene2:{tag:'【孙总落幕·沉默离场】',blocks:[{type:'narration',text:'孙总办公室大门闭合。走廊尽头，小林静静伫立，今日空手而立，无公事缠身。半小时后，审计组走出，手中新增密封档案盒。孙总紧随其后，褪去往日掌控全场的强势气场。他路过小林身侧，脚步微顿。小林微微侧身，让出通路，姿态不再是往日低眉顺眼的助理。孙总收回目光，继续前行。途经项目部工位区，视线平视前方，不看任何人。电梯门开启，一行人依次踏入。电梯门缓缓合拢。全季核心反派，无台词、无宣告，沉默出局。'}],choices:[{label:'端坐工位，安静目送',nextScene:'ch20_branch2a'},{label:'抬眸远眺，默然收尾',nextScene:'ch20_branch2b'}]},
+ch20_branch2a:{tag:'【分支·不动声色】',blocks:[{type:'narration',text:'你稳坐工位，未曾起身，安静目送电梯闭合。所有恩怨、愧疚、对峙，随这扇门落幕尘埃落定。'}],choices:[{label:'__auto__',nextScene:'ch20_merge2'}]},
+ch20_branch2b:{tag:'【分支·淡然远眺】',blocks:[{type:'narration',text:'你微微抬眸，望向电梯方向，二十天的步步惊心，在此刻彻底落地。'}],choices:[{label:'__auto__',nextScene:'ch20_merge2'}]},
+ch20_merge2:{tag:'【汇合】',blocks:[{type:'narration',text:'走廊尽头，小林依旧静立。她抬眼与你对视一瞬，微微颔首，随即转身离开，身影融入走廊暗处。'}],choices:[{label:'__auto__',nextScene:'ch20_scene3'}]},
+ch20_scene3:{tag:'【午后归期·陈默正式复职】',blocks:[{type:'narration',text:'午后，第二条OA公告准时推送。《人事复职通知》：陈默，恢复项目部原有岗位，即日生效。'},{type:'narration',text:'刘伟瞥见公告，身形一顿。'},{type:'dialogue',text:'刘伟："她回来了。她真的回来了。"'},{type:'dialogue',text:'李姐："工位该收拾一下了。"'},{type:'narration',text:'张野第一次主动摘下耳机，轻轻放置桌面，抬眼望向空工位方向。下午三点，陈默缓步走入项目部。她径直走向空置十一章的专属工位，目光落在显示器边框上你昨日贴上的便利贴——「明天见」。她抬手取下便利贴，取出全新便利贴与笔，落笔干脆，贴在你的显示器正中央。纸上四字，工整利落：今天见。第一章警示、第九章告别、第二十章重逢，三张核心便利贴，串联全季起点、低谷、终章。陈默落座，开机、调试设备，彻底归位。'}],choices:[{label:'__auto__',nextScene:'ch20_scene4'}]},
+ch20_scene4:{tag:'【全员齐聚·项目部终章温情】',blocks:[{type:'narration',text:'下班前夕，项目部全员在岗。陈默端坐左位，你落座右位，李姐、刘伟、张野各守工位。五人齐聚，是全季最完整、最安稳的一幕。'},{type:'dialogue',text:'李姐："今天不用加班。明天还是要加的。"'},{type:'narration',text:'刘伟低头看向空水杯，第一次主动开口。'},{type:'dialogue',text:'刘伟："咖啡没了。我去泡。五杯。"'},{type:'narration',text:'他端着五杯咖啡回来，稳稳放在每个人桌上。没有洒一滴。从被动端送、愧疚补偿、默默留守，到今日主动奔赴、均分温暖，刘伟完成小人物完整弧光。最后一杯，稳稳放在陈默面前。张野端起咖啡轻抿一口，将耳机摘下挂在脖颈，低头看了一眼手机，把《大悲咒》Remix从播放列表里删了。'},{type:'dialogue',text:'张野："挺好。"'}],choices:[{label:'端起咖啡，静默感受安稳',nextScene:'ch20_branch3a'},{label:'目视全员，释然收尾过往',nextScene:'ch20_branch3b'}]},
+ch20_branch3a:{tag:'【分支·静默心安】',blocks:[{type:'narration',text:'你端起温热的咖啡，轻抿一口，二十天的紧绷、愧疚、蛰伏、对峙，尽数消融于温热。'}],choices:[{label:'__auto__',nextScene:'ch20_merge3'}]},
+ch20_branch3b:{tag:'【分支·释然回望】',blocks:[{type:'narration',text:'你目光扫过身旁全员、归位的陈默、空置的工位，所有跌宕落幕，只剩安稳如常。'}],choices:[{label:'__auto__',nextScene:'ch20_merge3'}]},
+ch20_merge3:{tag:'【汇合】',blocks:[{type:'narration',text:'暮色渐沉，办公区灯光柔和，项目部归于久违的平静。'}],choices:[{label:'__auto__',nextScene:'ch20_scene5'}]},
+ch20_scene5:{tag:'【天台终话·全季情感落点】',blocks:[{type:'narration',text:'众人陆续离岗，办公室只剩你与陈默。陈默起身，语气平淡。'},{type:'dialogue',text:'陈默："天台。"'},{type:'narration',text:'天台晚风呼啸。陈默倚靠栏杆，望向远处楼宇。'},{type:'dialogue',text:'陈默："二十天。你入职二十天，我在外面待了十一天。你用二十天，做到了我一年半才完成的事——让孙总在规则内彻底出局。"'},{type:'dialogue',text:'陈默："阿杰的事，王总告诉你了。我接下这个工位时，只剩几本对不上的台账。内部无路可查，我只能选择出去。"'},{type:'dialogue',text:'陈默："阿杰是我上一个邻座。他走的时候，我连句再见都没说上。所以这次，我一定要回来亲口告诉你。"'},{type:'dialogue',text:'陈默："出去需要代价。代价就是，让你一直以为，是你害了我。"'},{type:'dialogue',text:'陈默："这个局最难的从不是取证布局。是看着你一个人扛下所有愧疚与压力，我只能旁观，不能伸手、不能解释。"'}],choices:[{label:'复刻台词：咖啡我自己冲了。出师了。',nextScene:'ch20_branch4a'},{label:'坦诚期许：下次别一个人扛。',nextScene:'ch20_branch4b'}]},
+ch20_branch4a:{tag:'【分支·传承致敬】',blocks:[{type:'dialogue',text:'你："咖啡我自己冲了。出师了。"'},{type:'dialogue',text:'陈默："出师了，还用我冲咖啡？"'}],choices:[{label:'__auto__',nextScene:'ch20_merge4'}]},
+ch20_branch4b:{tag:'【分支·温柔共情】',blocks:[{type:'dialogue',text:'你："下次别一个人扛。"'},{type:'dialogue',text:'陈默："习惯了。但你来了，下次分你一半。"'}],choices:[{label:'__auto__',nextScene:'ch20_merge4'}]},
+ch20_merge4:{tag:'【汇合】',blocks:[{type:'narration',text:'两人静默伫立天台，风声簌簌，足矣收尾所有过往。'}],choices:[{label:'__auto__',nextScene:'ch20_scene6'}]},
+ch20_scene6:{tag:'【终笔抉择·全季最后一行字】',blocks:[{type:'narration',text:'返回项目部，夜色深沉。阿杰的旧工装依旧搭在空置椅背上。你经过那把空椅子时，伸手把工装领口的褶皱抚平了。阿杰开路、陈默接力、你终局翻盘，三件工装、三个人、一条未断的坚守线，在此刻完整闭环。你翻开随身笔记本，二十天、二十章的记录密密麻麻。'}],choices:[{label:'落地收束：锅卸了。继续。',nextScene:'ch20_branch5a'},{label:'期许未来：二十天。一个开始。',nextScene:'ch20_branch5b'}]},
+ch20_branch5a:{tag:'【分支·利落收官】',blocks:[{type:'narration',text:'你落笔写下：锅卸了。继续。'}],choices:[{label:'__auto__',nextScene:'ch20_merge5'}]},
+ch20_branch5b:{tag:'【分支·向阳新生】',blocks:[{type:'narration',text:'你落笔写下：二十天。一个开始。'}],choices:[{label:'__auto__',nextScene:'ch20_merge5'}]},
+ch20_merge5:{tag:'【汇合】',blocks:[{type:'narration',text:'陈默伸手，递来一张全新的便利贴，字迹清淡如常。'},{type:'dialogue',text:'陈默："明天还有班要上。别迟到。"'},{type:'narration',text:'没有庆功、没有煽情、没有宣告胜利，只有职场最朴素的日常。你将便利贴夹入笔记本最后一页，封存全季所有故事。'}],choices:[{label:'__auto__',nextScene:'ch20_scene7'}]},
+ch20_scene7:{tag:'【第二季钩子·风浪未止】',blocks:[{type:'narration',text:'手机屏幕骤然亮起，行业新闻弹窗推送。四海集团副总裁钱四海出席行业论坛，表态合规经营，旗下盛恒商业银行启动增资扩股计划。新闻配图中，钱四海西装革履、从容微笑。你看着屏幕上"孙总被查风波"六个字——消息已经传出去了。'},{type:'narration',text:'陈默已然看清屏幕内容，神色平静。'},{type:'dialogue',text:'陈默："钱四海知道孙总出事了。他在切割。"'},{type:'dialogue',text:'陈默："他的事还没完。不过那是明天的事了。"'},{type:'narration',text:'她抬眼望向窗外夜色，落下全季最终旁白。'},{type:'dialogue',text:'陈默："锅终于卸下来了。但厨房还在。"'}],choices:[{label:'__auto__',nextScene:'ch20_chapter_end'}]},
+ch20_chapter_end:{tag:'【第一季·全剧终】',blocks:[{type:'narration',text:'你合上笔记本，起身准备离岗。走廊灯光昏暗柔和，小林方才站立的位置已经空了。手机再次亮起两条消息。其一：钱四海最新行业动态推送。其二：王总OA私信，简短利落：明天正常上班。职场从无终极大结局，只有往复不停的明日与前路。项目部灯火依旧明亮。空工位、旧工装、温热的咖啡、崭新的便利贴，二十天跌宕沉浮，尽数定格于此。风浪暂歇，坚守未止。'},{type:'bold',text:'【第一季·全剧终】'},{type:'narration',text:'感谢游玩《背锅侠》第一季。如果这二十天的故事让你有所触动，欢迎关注公众号「背锅侠本侠」，第二季开发进度、番外篇、幕后故事都将在公众号发布。'},{type:'bold',text:'微信搜索：背锅侠本侠'}],choices:[{label:'__auto__',nextScene:'__end__'}]}
+};
+
+btnBackpack.addEventListener('click',openBackpack);backpackClose.addEventListener('click',closeBackpack);backpackOverlay.addEventListener('click',e=>{if(e.target===backpackOverlay)closeBackpack();});
+btnChapters.addEventListener('click',renderChapterSelect);chapterSelectClose.addEventListener('click',()=>chapterSelect.classList.add('hidden'));
+chapterSelect.addEventListener('click',e=>{if(e.target===chapterSelect)chapterSelect.classList.add('hidden');});
+reminderContinue.addEventListener('click',()=>{hideReminder();resetReminderTimer();});reminderWork.addEventListener('click',()=>{hideReminder();resetReminderTimer();});
+reminderOverlay.addEventListener('click',e=>{if(e.target===reminderOverlay)hideReminder();});
+introConfirm.addEventListener('click',advanceIntro);recapContinue.addEventListener('click',hideRecap);
+
+function init(){chapterLabel.textContent=CHAPTER_TITLES[0];if(shouldShowIntro()){showIntroScreen(0);}else{showMoyuThenContinue();}}
+init();
+})();
+</script>
+</body>
+</html>
